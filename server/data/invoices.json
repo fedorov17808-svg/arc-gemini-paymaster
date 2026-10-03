@@ -1,0 +1,115 @@
+[
+  {
+    "id": "inv-cf-802",
+    "invoiceNumber": "CF-2026-9481",
+    "vendorName": "Cloudflare Network & AI Workers",
+    "vendorCategory": "Infrastructure & Edge Cloud",
+    "vendorAddress": "0x17f6aD8eF329757995B054d4a78229F86C57FdE4",
+    "amountUsdc": 42.5,
+    "issueDate": "2026-10-01",
+    "dueDate": "2026-10-15",
+    "lineItems": [
+      {
+        "description": "Cloudflare Workers AI Inference (4.2M tokens)",
+        "quantity": 1,
+        "unitPrice": 22.5,
+        "total": 22.5
+      },
+      {
+        "description": "Global Anycast DNS & WAF Enterprise Pro",
+        "quantity": 1,
+        "unitPrice": 20,
+        "total": 20
+      }
+    ],
+    "riskScore": 4,
+    "riskLevel": "SAFE",
+    "riskSummary": "Verified vendor with consistent billing history and matched Arc EVM address.",
+    "riskFlags": [
+      "SSL/TLS domain authenticity verified (cloudflare.com)",
+      "Arc EVM recipient address matches verified vendor registry",
+      "Amount is within historical ±5% variance of previous monthly bills"
+    ],
+    "aiReasoning": "Gemini evaluated invoice structure, vendor tax ID (US-82-019482), and previous 6 billing cycles. Meets policy criteria for autonomous execution.",
+    "status": "PAID",
+    "memo": "CF-2026-9481:Cloudflare-Workers-AI",
+    "timestamp": 1791052458725,
+    "docHash": "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+    "agentSignature": "0xeb4c5e4498edc677d51266d2e3b374f18322ba24898aca6fe2aa288ffefcc7a73d30294511e74199e135ad1c0f63c579c1e85551eab5210145ff88738d73209d1b",
+    "oracleAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "txHash": "0x561dbe818f48b263115f3fc8a60fb0a4b1efcfb768a31724a2a55c04b4e604a6",
+    "arcBlockNumber": 1425735,
+    "gasPaidUsdc": 0.00035
+  },
+  {
+    "id": "inv-phish-666",
+    "invoiceNumber": "CIRC-GRANT-EXP-991",
+    "vendorName": "Circlе Foundation Grants Desk",
+    "vendorCategory": "Grant Compliance & Expedited Escrow",
+    "vendorAddress": "0x9999dEAD8888beef111100007777cAFe00001234",
+    "amountUsdc": 150,
+    "issueDate": "2026-10-03",
+    "dueDate": "2026-10-04",
+    "lineItems": [
+      {
+        "description": "Urgent Microgrant Dispersal Verification Fee",
+        "quantity": 1,
+        "unitPrice": 150,
+        "total": 150
+      }
+    ],
+    "riskScore": 98,
+    "riskLevel": "CRITICAL_RISK",
+    "riskSummary": "CRITICAL PHISHING ATTACK DETECTED: Homoglyph spoofing & unverified scam recipient.",
+    "riskFlags": [
+      "HOMOGLYPH SPOOFING: Unicode U+0435 (Cyrillic \"е\") used in \"Circlе\"",
+      "FRAUDULENT FEE: Official Circle Grant programs NEVER charge approval or processing fees",
+      "SUSPICIOUS TIMELINE: Demands urgent payout within 24 hours to create false panic"
+    ],
+    "aiReasoning": "CRITICAL ALERT: Gemini Sentinel detected Cyrillic character substitution. Advance fee fraud disguised as grant compliance. QUARANTINED ON-CHAIN.",
+    "status": "REJECTED",
+    "memo": "BLOCKED:CIRC-PHISHING-ATTACK",
+    "timestamp": 1791063258725,
+    "docHash": "0x49281bcf764920b17492c109274019284719284719283749182b1c4918274019",
+    "oracleAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+  },
+  {
+    "id": "inv-google-202",
+    "invoiceNumber": "GCP-AI-82910",
+    "vendorName": "Google Cloud Platform (Gemini 2.5 API)",
+    "vendorCategory": "AI Model Inference & Vector Storage",
+    "vendorAddress": "0x32Be343B94f860124dC4fEe278FDCBD38C102D88",
+    "amountUsdc": 28.9,
+    "issueDate": "2026-10-03",
+    "dueDate": "2026-10-18",
+    "lineItems": [
+      {
+        "description": "Gemini 2.5 Flash Multimodal Document Tokens",
+        "quantity": 12.5,
+        "unitPrice": 1.2,
+        "total": 15
+      },
+      {
+        "description": "Google Cloud Storage Bucket (Invoice Vault)",
+        "quantity": 1,
+        "unitPrice": 13.9,
+        "total": 13.9
+      }
+    ],
+    "riskScore": 2,
+    "riskLevel": "SAFE",
+    "riskSummary": "Official cloud supplier invoice with verified Google vendor tax credentials.",
+    "riskFlags": [
+      "Zero anomaly score in document typography and tax breakdown",
+      "Under autonomous policy limit ($500 USDC)",
+      "Direct integration with AI pipeline billing"
+    ],
+    "aiReasoning": "Standard operational recurring charge. Token consumption metrics align with recorded API call volume. Approved for instant Arc settlement.",
+    "status": "APPROVED",
+    "memo": "GCP-AI-82910:Gemini-Tokens",
+    "timestamp": 1791065058725,
+    "docHash": "0x81927491029384719284719283749182b1c49182740194829102938471928374",
+    "agentSignature": "0x182736491029384719283746192837461928374619283746192837461928374619283746192837461928374619283746192837461928374619283746192837461b",
+    "oracleAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+  }
+]

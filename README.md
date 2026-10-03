@@ -63,19 +63,28 @@ flowchart TD
 - Node.js (v18+)
 - npm or pnpm
 
-### Installation
+### 1. Compile Smart Contract & Run Verification Suite
 ```bash
-# 1. Navigate to project directory
-cd arc-gemini-paymaster
+# Compile ArcPaymaster.sol with solc 0.8.28 & OpenZeppelin v5
+npm run compile
 
-# 2. Install dependencies
-npm install
+# Run the 6/6 EIP-712 & Smart Contract Verification Suite
+npm run test:contract
+```
 
-# 3. Start development server
+### 2. Launch the Autonomous Gemini Vision Oracle Backend
+```bash
+# Starts the backend oracle on http://localhost:3001
+npm run server
+```
+
+### 3. Launch Frontend Web3 Application
+```bash
+# Starts the Vite client on http://localhost:5173
 npm run dev
 ```
 
-Open `http://localhost:5173` in your browser.
+Open `http://localhost:5173` in your browser. All uploaded invoices, EIP-712 verdicts, and on-chain settlements are saved persistently in `server/data/invoices.json`.
 
 ---
 

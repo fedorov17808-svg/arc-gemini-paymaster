@@ -26,3 +26,4 @@ artifacts/build-info/
 *.njsproj
 *.sln
 *.sw?
+.vercel

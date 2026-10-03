@@ -16,7 +16,19 @@ import { arcWeb3, ARC_MAINNET_CONFIG, DEMO_AGENT_ADDRESS } from './services/arcW
 import { geminiService } from './services/geminiService';
 
 export const App: React.FC = () => {
-  const [invoices, setInvoices] = useState<Invoice[]>(SAMPLE_INVOICES);
+  const [invoices, setInvoices] = useState<Invoice[]>(() => {
+    try {
+      const saved = localStorage.getItem('arc_invoices');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // fallback
+    }
+    return SAMPLE_INVOICES;
+  });
+
   const [treasuryBalance, setTreasuryBalance] = useState<number>(10000.00);
 
   const [wallet, setWallet] = useState<WalletState>({
@@ -49,17 +61,30 @@ export const App: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
 
-  // Fetch persistent invoices on mount
+  // Fetch persistent invoices on mount & merge
   useEffect(() => {
-    fetch('http://localhost:3001/api/invoices')
+    fetch('/api/invoices')
       .then((res) => res.json())
       .then((data) => {
         if (data?.invoices && Array.isArray(data.invoices) && data.invoices.length > 0) {
-          setInvoices(data.invoices);
+          setInvoices((prev) => {
+            const map = new Map<string, Invoice>();
+            data.invoices.forEach((i: Invoice) => map.set(i.id, i));
+            prev.forEach((i: Invoice) => {
+              if (!map.has(i.id)) map.set(i.id, i);
+            });
+            const merged = Array.from(map.values());
+            try {
+              localStorage.setItem('arc_invoices', JSON.stringify(merged));
+            } catch (e) {
+              console.warn('localStorage quota exceeded:', e);
+            }
+            return merged;
+          });
         }
       })
       .catch((err) => {
-        console.warn('Backend API not reachable, using local seed dataset:', err);
+        console.warn('Backend API not reachable, using cached dataset:', err);
       });
   }, []);
 
@@ -90,6 +115,23 @@ export const App: React.FC = () => {
     }
   };
 
+  // Toggle Autonomous Mode
+  const handleToggleAutonomous = () => {
+    setWallet((prev) => ({
+      ...prev,
+      isAutonomousAgentMode: !prev.isAutonomousAgentMode,
+      networkName: 'Arc Mainnet',
+      isArcMainnet: true,
+      chainId: 5042,
+    }));
+    showToast(
+      wallet.isAutonomousAgentMode
+        ? 'Switched to Manual Treasury Mode'
+        : 'Switched to Autonomous Gemini Agent Mode',
+      'info'
+    );
+  };
+
   // Switch network to Arc Mainnet
   const handleSwitchToArc = async () => {
     try {
@@ -117,13 +159,27 @@ export const App: React.FC = () => {
     showToast(`Dispatching payment for ${inv.amountUsdc.toFixed(2)} USDC on Arc Mainnet...`, 'info');
 
     try {
-      const res = await arcWeb3.sendArcPayment(inv.vendorAddress, inv.amountUsdc, inv.memo);
+      let res;
+      if (inv.agentSignature && inv.docHash) {
+        res = await arcWeb3.settleViaPaymasterContract({
+          invoiceId: inv.docHash,
+          recipient: inv.vendorAddress,
+          amountUsdc: inv.amountUsdc,
+          riskScore: inv.riskScore,
+          nonce: 0,
+          deadline: Math.floor(Date.now() / 1000) + 86400,
+          vendorName: inv.vendorName,
+        }, inv.agentSignature);
+      } else {
+        res = await arcWeb3.sendArcPayment(inv.vendorAddress, inv.amountUsdc, inv.memo);
+      }
 
-      // Persist settlement to backend database
-      fetch(`http://localhost:3001/api/invoices/${inv.id}/settle`, {
+      // Persist settlement to backend database / serverless API
+      fetch('/api/invoices', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: inv.id,
           txHash: res.txHash,
           arcBlockNumber: res.blockNumber,
           gasPaidUsdc: res.gasPaidUsdc,
@@ -132,32 +188,34 @@ export const App: React.FC = () => {
 
       // Deduct balance and update invoice status
       setTreasuryBalance((prev) => Math.max(0, prev - inv.amountUsdc - res.gasPaidUsdc));
-      setInvoices((prev) =>
-        prev.map((item) =>
-          item.id === inv.id
-            ? {
-                ...item,
-                status: 'PAID',
-                txHash: res.txHash,
-                arcBlockNumber: res.blockNumber,
-                gasPaidUsdc: res.gasPaidUsdc,
-              }
-            : item
-        )
+      
+      const updatedInvoices = invoices.map((item) =>
+        item.id === inv.id
+          ? {
+              ...item,
+              status: 'PAID' as const,
+              txHash: res.txHash,
+              arcBlockNumber: res.blockNumber,
+              gasPaidUsdc: res.gasPaidUsdc,
+            }
+          : item
       );
 
+      setInvoices(updatedInvoices);
+      try {
+        localStorage.setItem('arc_invoices', JSON.stringify(updatedInvoices));
+      } catch (e) {
+        console.warn('Could not save to localStorage:', e);
+      }
+
       if (selectedInvoice && selectedInvoice.id === inv.id) {
-        setSelectedInvoice((prev) =>
-          prev
-            ? {
-                ...prev,
-                status: 'PAID',
-                txHash: res.txHash,
-                arcBlockNumber: res.blockNumber,
-                gasPaidUsdc: res.gasPaidUsdc,
-              }
-            : null
-        );
+        setSelectedInvoice({
+          ...selectedInvoice,
+          status: 'PAID',
+          txHash: res.txHash,
+          arcBlockNumber: res.blockNumber,
+          gasPaidUsdc: res.gasPaidUsdc,
+        });
       }
 
       // Celebrate success!
@@ -202,7 +260,14 @@ export const App: React.FC = () => {
     setIsAuditing(true);
     try {
       const audited = await geminiService.auditInvoice(fileName, fileObj, policy, apiKey);
-      setInvoices((prev) => [audited, ...prev]);
+      const updated = [audited, ...invoices];
+      setInvoices(updated);
+      try {
+        localStorage.setItem('arc_invoices', JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Could not write localStorage:', e);
+      }
+
       setSelectedInvoice(audited);
       setIsUploaderOpen(false);
 
@@ -225,7 +290,21 @@ export const App: React.FC = () => {
       id: `inv-${Date.now()}`,
       timestamp: Date.now(),
     };
-    setInvoices((prev) => [sampleCopy, ...prev]);
+
+    fetch('/api/invoices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sampleCopy),
+    }).catch((e) => console.warn('Sample sync error:', e));
+
+    const updated = [sampleCopy, ...invoices];
+    setInvoices(updated);
+    try {
+      localStorage.setItem('arc_invoices', JSON.stringify(updated));
+    } catch (e) {
+      console.warn('localStorage error:', e);
+    }
+
     setSelectedInvoice(sampleCopy);
     setIsUploaderOpen(false);
 
@@ -263,48 +342,51 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* Main Navigation Header */}
-      <Header
+      {/* Main Header */}
+      <Header 
         wallet={wallet}
         onConnectWallet={handleConnectWallet}
         onSwitchToArc={handleSwitchToArc}
-        onToggleAutonomousMode={() => setWallet(w => ({ ...w, isAutonomousAgentMode: !w.isAutonomousAgentMode }))}
+        onToggleAutonomousMode={handleToggleAutonomous}
         onOpenTerminal={() => setIsTerminalOpen(true)}
         onOpenPolicy={() => setIsPolicyOpen(true)}
         onOpenHackathonInfo={() => setIsHackathonInfoOpen(true)}
         onOpenUploader={() => setIsUploaderOpen(true)}
       />
 
-      {/* Primary KPI & Treasury Metrics */}
-      <StatsBar
-        invoices={invoices}
-        policy={policy}
-        treasuryBalance={treasuryBalance}
-      />
-
-      {/* Main Invoice List & Paymaster Queue */}
-      <div style={{ flex: 1 }}>
-        <InvoiceList
+      {/* Main Content Area */}
+      <main style={{ flex: 1, padding: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
+        {/* Treasury Metrics Overview */}
+        <StatsBar 
           invoices={invoices}
-          onSelectInvoice={(inv) => setSelectedInvoice(inv)}
+          policy={policy}
+          treasuryBalance={treasuryBalance}
+        />
+
+        {/* Invoice Audit & Processing Queue */}
+        <InvoiceList 
+          invoices={invoices}
+          onSelectInvoice={setSelectedInvoice}
           onPayInvoice={handlePayInvoice}
           onPayAllSafe={handlePayAllSafe}
           isProcessing={isProcessing}
         />
 
-        {/* On-Chain Arc Transaction Ledger */}
-        <ArcLedgerTable paidInvoices={paidInvoices} />
-      </div>
+        {/* Real-Time Arc Mainnet On-Chain Ledger */}
+        <div style={{ marginTop: '36px' }}>
+          <ArcLedgerTable paidInvoices={paidInvoices} />
+        </div>
+      </main>
 
       {/* Modals */}
-      <InvoiceDetailModal
+      <InvoiceDetailModal 
         invoice={selectedInvoice}
         onClose={() => setSelectedInvoice(null)}
         onPayInvoice={handlePayInvoice}
         isProcessing={isProcessing}
       />
 
-      <UploaderModal
+      <UploaderModal 
         isOpen={isUploaderOpen}
         onClose={() => setIsUploaderOpen(false)}
         onAuditFile={handleAuditFile}
@@ -314,7 +396,7 @@ export const App: React.FC = () => {
         onApiKeyChange={setApiKey}
       />
 
-      <AgentTerminalModal
+      <AgentTerminalModal 
         isOpen={isTerminalOpen}
         onClose={() => setIsTerminalOpen(false)}
         invoices={invoices}
@@ -324,34 +406,17 @@ export const App: React.FC = () => {
         onSwitchToArc={handleSwitchToArc}
       />
 
-      <PolicyModal
+      <PolicyModal 
         isOpen={isPolicyOpen}
         onClose={() => setIsPolicyOpen(false)}
         policy={policy}
-        onSavePolicy={(p) => {
-          setPolicy(p);
-          showToast('Treasury Policy updated successfully!', 'success');
-        }}
+        onSavePolicy={(newPolicy) => setPolicy(newPolicy)}
       />
 
-      <HackathonInfoModal
+      <HackathonInfoModal 
         isOpen={isHackathonInfoOpen}
         onClose={() => setIsHackathonInfoOpen(false)}
       />
-
-      {/* Footer */}
-      <footer style={{ margin: '20px', padding: '16px 24px', borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-        <div>
-          <span>ArcPaymaster AI • Built for </span>
-          <strong style={{ color: '#00f2fe' }}>Circle Arc Microgrants</strong>
-          <span> on DoraHacks</span>
-        </div>
-        <div style={{ display: 'flex', gap: '16px' }}>
-          <span>Chain ID: <strong>5042</strong></span>
-          <span>Gas Currency: <strong style={{ color: '#10b981' }}>USDC</strong></span>
-          <span>AI Model: <strong style={{ color: '#00f2fe' }}>Google Gemini 2.5 Flash</strong></span>
-        </div>
-      </footer>
     </div>
   );
 };

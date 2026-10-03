@@ -15,8 +15,7 @@ export class GeminiService {
 
   /**
    * Multimodal Audit of an uploaded Invoice or Document.
-   * Calls the production Gemini Vision Backend at http://localhost:3001/api/audit-invoice,
-   * with seamless client-side fallback if backend is unreachable.
+   * Calls the production Vercel Serverless Function at /api/audit-invoice.
    */
   public async auditInvoice(
     fileName: string,
@@ -33,33 +32,46 @@ export class GeminiService {
       autoExecuteSafe: true,
     };
 
-    // 1. Try real production Gemini Vision Backend (if running on port 3001)
+    // 1. Try real production Gemini Vision / Serverless Forensic API
     if (fileObj) {
       try {
-        const formData = new FormData();
-        formData.append('invoiceFile', fileObj);
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            resolve(result.includes(',') ? result.split(',')[1] : result);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(fileObj);
+        });
 
-        const headers: Record<string, string> = {};
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
         if (apiKey && apiKey.trim().length > 10) {
           headers['x-gemini-api-key'] = apiKey.trim();
         }
 
-        const res = await fetch('http://localhost:3001/api/audit-invoice', {
+        const res = await fetch('/api/audit-invoice', {
           method: 'POST',
           headers,
-          body: formData,
+          body: JSON.stringify({
+            fileName: fileObj.name,
+            mimeType: fileObj.type || 'application/pdf',
+            fileBase64: base64Data,
+          }),
         });
 
         if (res.ok) {
           const data = await res.json();
           const audit = data.auditResult;
 
-          return {
+          const createdInvoice: Invoice = {
             id: `inv-${Date.now()}`,
             invoiceNumber: audit.invoiceNumber || `INV-${Date.now().toString().slice(-6)}`,
             vendorName: audit.vendorName || 'Verified Supplier',
             vendorCategory: audit.vendorCategory || 'Enterprise Service',
-            vendorAddress: audit.vendorAddress || '0x17F6AD8Ef329757995b054d4A78229F86c57FDe4',
+            vendorAddress: audit.vendorAddress || '0x17f6aD8eF329757995B054d4a78229F86C57FdE4',
             amountUsdc: Number(audit.amountUsdc) || 50.00,
             issueDate: new Date().toISOString().split('T')[0],
             dueDate: new Date(Date.now() + 86400000 * 14).toISOString().split('T')[0],
@@ -71,19 +83,28 @@ export class GeminiService {
             aiReasoning: audit.aiReasoning || 'Gemini 2.5 Flash inspected document structure and signed on-chain verdict.',
             status: audit.riskLevel === 'CRITICAL_RISK' ? 'REJECTED' : 'AUDITED',
             timestamp: Date.now(),
-            memo: `AUDIT:${(audit.vendorName || 'VENDOR').slice(0, 10)}`,
+            memo: `AUDIT:${(audit.vendorName || 'VENDOR').slice(0, 10).replace(/[^a-zA-Z0-9]/g, '')}`,
             docHash: data.invoiceDocHash,
             agentSignature: data.agentSignature,
             oracleAddress: data.oracleAddress,
           };
+
+          // Persist to serverless store
+          fetch('/api/invoices', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(createdInvoice),
+          }).catch((e) => console.warn('Could not sync invoice to server:', e));
+
+          return createdInvoice;
         }
       } catch (backendErr) {
-        console.warn('Backend server not reachable on :3001, executing client-side Gemini engine:', backendErr);
+        console.warn('Backend API /api/audit-invoice error, falling back to client-side forensics:', backendErr);
       }
     }
 
-    // 2. Client-side Intelligent Engine (with real Keccak256 hash & EIP-712 compatibility)
-    await new Promise((resolve) => setTimeout(resolve, 1400));
+    // 2. Client-side Intelligent Forensic Engine (with real Keccak256 hash & EIP-712 compatibility)
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
     const lowerName = fileName.toLowerCase();
     const isPhishing = lowerName.includes('phish') || lowerName.includes('grant') || lowerName.includes('urgent') || lowerName.includes('scam');
@@ -136,7 +157,7 @@ export class GeminiService {
 
     const calculatedDocHash = keccak256(toUtf8Bytes(`${fileName}-${vendor}-${amount}-${Date.now()}`));
 
-    return {
+    const fallbackInvoice: Invoice = {
       id: `inv-${Date.now()}`,
       invoiceNumber: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
       vendorName: vendor,
@@ -158,12 +179,14 @@ export class GeminiService {
       memo: `AUDIT:${vendor.slice(0, 10).replace(/[^a-zA-Z0-9]/g, '')}`,
       docHash: calculatedDocHash,
       agentSignature: riskLevel === 'CRITICAL_RISK' ? undefined : '0x3a82f918e97bb10452ca876402376918a2bc490d1f7c9e0129bc847291a9df201837492c8192a01948dcb7264819a28b4912093847291a29384719283749182b1c',
-      oracleAddress: '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d',
+      oracleAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
     };
+
+    return fallbackInvoice;
   }
 
   /**
-   * Natural Language Agent Chat Interface
+   * Natural Language Agent Chat Interface calling /api/chat
    */
   public async chatWithAgent(
     query: string,
@@ -171,6 +194,35 @@ export class GeminiService {
     policy: TreasuryPolicy,
     apiKey?: string
   ): Promise<AgentChatMessage> {
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (apiKey && apiKey.trim().length > 10) {
+        headers['x-gemini-api-key'] = apiKey.trim();
+      }
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ query, invoices, policy }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return {
+          id: data.id || `msg-${Date.now()}`,
+          sender: data.sender || 'gemini',
+          text: data.text,
+          timestamp: data.timestamp || Date.now(),
+          suggestedAction: data.suggestedAction,
+        };
+      }
+    } catch (err) {
+      console.warn('Failed to call /api/chat, using client-side fiscal reasoning engine:', err);
+    }
+
+    // Client-side fallback reasoning
     const lower = query.toLowerCase();
 
     if (lower.includes('safe') || lower.includes('ready') || lower.includes('approved') || lower.includes('pay all')) {
@@ -201,28 +253,11 @@ export class GeminiService {
       };
     }
 
-    if (lower.includes('gas') || lower.includes('arc') || lower.includes('network') || lower.includes('chain')) {
-      return {
-        id: `msg-${Date.now()}`,
-        sender: 'gemini',
-        text: `🌐 **Circle's Arc Mainnet Advantages**:\n\n1. **Native USDC Gas:** Unlike Ethereum or Arbitrum where you need ETH, Arc uses **USDC directly for gas**. AI agents do not need to hold multiple volatile tokens.\n2. **Deterministic Finality:** Sub-second transaction confirmation (Chain ID: 5042).\n3. **Agentic Economic Layer:** Arc was engineered specifically so autonomous agents can hold treasuries and execute micro-payments without friction.`,
-        timestamp: Date.now(),
-        suggestedAction: {
-          label: '🔌 Connect or Switch to Arc Mainnet (5042)',
-          actionType: 'SWITCH_NETWORK',
-        },
-      };
-    }
-
     return {
       id: `msg-${Date.now()}`,
       sender: 'gemini',
-      text: `Hello! I am your **Autonomous Gemini Fiscal Agent** on Arc Mainnet. I currently monitor **${invoices.length} invoices** in your pipeline. I can audit new PDF/image bills with multimodal vision, generate EIP-712 oracle proofs, enforce spending limits, detect phishing scams, and execute sub-second USDC payments on Arc. What would you like me to do?`,
+      text: `Hello! I am your **Autonomous Gemini Fiscal Agent** on Arc Mainnet. I currently monitor **${invoices.length} invoices** in your pipeline. I can audit new PDF/image bills with multimodal vision, generate EIP-712 oracle proofs, enforce spending limits, detect phishing scams, and execute sub-second USDC payments on Arc.`,
       timestamp: Date.now(),
-      suggestedAction: {
-        label: '🔍 Run Full Treasury Audit',
-        actionType: 'AUDIT_ALL',
-      },
     };
   }
 }

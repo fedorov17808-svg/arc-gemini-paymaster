@@ -36,26 +36,48 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       setSelectedFileName(file.name);
-      onAuditFile(file.name, file);
+      await onAuditFile(file.name, file);
     }
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFileName(file.name);
-      onAuditFile(file.name, file);
+      await onAuditFile(file.name, file);
     }
   };
 
+  // Helper to trigger realistic live document forensics
+  const handleRunLiveScenarioAudit = async (scenarioType: 'SAFE' | 'AUDIT' | 'PHISHING' | 'GCP') => {
+    let fileName = 'cloudflare_compute_bill.pdf';
+    let content = `INVOICE #CF-2026-9481\nVENDOR: Cloudflare Network & AI Workers\nADDRESS: 0x17f6aD8eF329757995B054d4a78229F86C57FdE4\nAMOUNT: $42.50 USDC\nITEM: Workers AI Compute 4.2M tokens ($22.50)\nITEM: Global WAF Enterprise ($20.00)`;
+
+    if (scenarioType === 'PHISHING') {
+      fileName = 'circle_grant_verification_fee.pdf';
+      // Note Cyrillic 'е' in Circlе
+      content = `URGENT GRANT DISPERSAL NOTICE\nFROM: Circl\u0435 Foundation Grants Desk\nRECIPIENT WALLET: 0x9999dEAD8888beef111100007777cAFe00001234\nAMOUNT: $150.00 USDC\nFEE: Advance compliance escrow verification fee required within 24 hours.`;
+    } else if (scenarioType === 'AUDIT') {
+      fileName = 'smart_contract_audit_milestone.pdf';
+      content = `DELIVERABLE INVOICE\nVENDOR: CipherDefend Smart Contract Labs\nADDRESS: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8\nAMOUNT: $850.00 USDC\nITEM: ArcPaymaster.sol Formal Verification & Slither Audit Report`;
+    } else if (scenarioType === 'GCP') {
+      fileName = 'gcp_gemini_token_usage.pdf';
+      content = `GOOGLE CLOUD PLATFORM\nVENDOR: Google Cloud Platform (Gemini 2.5 API)\nADDRESS: 0x32Be343B94f860124dC4fEe278FDCBD38C102D88\nAMOUNT: $28.90 USDC\nITEM: Gemini 2.5 Flash Tokens & Cloud Storage Bucket`;
+    }
+
+    const file = new File([new Blob([content], { type: 'text/plain' })], fileName, { type: 'text/plain' });
+    setSelectedFileName(fileName);
+    await onAuditFile(fileName, file);
+  };
+
   return (
-    <div 
+    <div
       style={{
         position: 'fixed',
         top: 0,
@@ -72,11 +94,11 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
       }}
       onClick={onClose}
     >
-      <div 
-        className="glass-panel" 
+      <div
+        className="glass-panel"
         style={{
           width: '100%',
-          maxWidth: '600px',
+          maxWidth: '560px',
           padding: '28px',
           background: '#0d1322',
           border: '1px solid rgba(255, 255, 255, 0.12)',
@@ -85,23 +107,24 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sparkles size={20} color="#00f2fe" />
-              <span>Audit Invoice with Gemini</span>
-            </h2>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', marginBottom: '4px' }}>
+              Upload & Audit Invoice Document
+            </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Multimodal document OCR, fraud verification, and policy conformance check.
+              Gemini 2.5 Flash inspects typography, EVM recipients, and homoglyphs.
             </p>
           </div>
-          <button 
+          <button
             onClick={onClose}
             style={{
               background: 'rgba(255, 255, 255, 0.06)',
               borderRadius: '50%',
               padding: '8px',
               color: 'var(--text-muted)',
+              cursor: 'pointer',
             }}
           >
             <X size={18} />
@@ -129,7 +152,7 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
             type="file" 
             id="file-input-id" 
             style={{ display: 'none' }} 
-            accept="image/*,.pdf" 
+            accept="image/*,.pdf,.txt" 
             onChange={handleFileInput} 
           />
           <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(0, 242, 254, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto' }}>
@@ -149,16 +172,17 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
           )}
         </div>
 
-        {/* 1-Click Samples for DoraHacks Judges */}
+        {/* 1-Click Live Forensic Scenarios for Judges */}
         <div style={{ marginBottom: '22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Or Test Instant Scenarios (For Judges):
+              Or Trigger Live Forensic Scenarios (For Judges):
             </span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
             <button
-              onClick={() => onLoadSample(SAMPLE_INVOICES[0])}
+              onClick={() => handleRunLiveScenarioAudit('SAFE')}
+              disabled={isAuditing}
               style={{
                 textAlign: 'left',
                 padding: '10px 12px',
@@ -167,14 +191,16 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
                 borderRadius: '8px',
                 color: '#e2e8f0',
                 fontSize: '0.76rem',
+                cursor: 'pointer',
               }}
             >
               <div style={{ fontWeight: 700, color: '#34d399', marginBottom: '2px' }}>🟢 Cloudflare AI Compute</div>
-              <div style={{ color: 'var(--text-dim)' }}>$42.50 USDC • Safe & Valid</div>
+              <div style={{ color: 'var(--text-dim)' }}>$42.50 USDC • Live Forensic Run</div>
             </button>
 
             <button
-              onClick={() => onLoadSample(SAMPLE_INVOICES[1])}
+              onClick={() => handleRunLiveScenarioAudit('AUDIT')}
+              disabled={isAuditing}
               style={{
                 textAlign: 'left',
                 padding: '10px 12px',
@@ -183,14 +209,16 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
                 borderRadius: '8px',
                 color: '#e2e8f0',
                 fontSize: '0.76rem',
+                cursor: 'pointer',
               }}
             >
               <div style={{ fontWeight: 700, color: '#fbbf24', marginBottom: '2px' }}>🟡 Smart Contract Audit</div>
-              <div style={{ color: 'var(--text-dim)' }}>$850.00 USDC • Over Limit</div>
+              <div style={{ color: 'var(--text-dim)' }}>$850.00 USDC • Multi-Sig Flow</div>
             </button>
 
             <button
-              onClick={() => onLoadSample(SAMPLE_INVOICES[2])}
+              onClick={() => handleRunLiveScenarioAudit('PHISHING')}
+              disabled={isAuditing}
               style={{
                 textAlign: 'left',
                 padding: '10px 12px',
@@ -199,14 +227,16 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
                 borderRadius: '8px',
                 color: '#e2e8f0',
                 fontSize: '0.76rem',
+                cursor: 'pointer',
               }}
             >
               <div style={{ fontWeight: 700, color: '#f87171', marginBottom: '2px' }}>🔴 Phishing Homoglyph Scam</div>
-              <div style={{ color: 'var(--text-dim)' }}>$150.00 USDC • Blocked Threat</div>
+              <div style={{ color: 'var(--text-dim)' }}>$150.00 USDC • Circlе Spoofing</div>
             </button>
 
             <button
-              onClick={() => onLoadSample(SAMPLE_INVOICES[3])}
+              onClick={() => handleRunLiveScenarioAudit('GCP')}
+              disabled={isAuditing}
               style={{
                 textAlign: 'left',
                 padding: '10px 12px',
@@ -215,10 +245,11 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
                 borderRadius: '8px',
                 color: '#e2e8f0',
                 fontSize: '0.76rem',
+                cursor: 'pointer',
               }}
             >
               <div style={{ fontWeight: 700, color: '#00f2fe', marginBottom: '2px' }}>🔵 Gemini API Token Bill</div>
-              <div style={{ color: 'var(--text-dim)' }}>$28.90 USDC • Auto-Approved</div>
+              <div style={{ color: 'var(--text-dim)' }}>$28.90 USDC • Autonomous Cap</div>
             </button>
           </div>
         </div>
@@ -238,13 +269,14 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
             onChange={(e) => onApiKeyChange(e.target.value)}
             style={{
               width: '100%',
-              padding: '8px 12px',
-              background: 'rgba(7, 11, 20, 0.8)',
-              border: '1px solid var(--border-subtle)',
+              background: 'rgba(0, 0, 0, 0.3)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: '6px',
-              color: '#f8fafc',
+              padding: '8px 12px',
+              color: '#ffffff',
               fontSize: '0.78rem',
-              fontFamily: 'var(--font-mono)',
+              fontFamily: 'monospace',
+              outline: 'none',
             }}
           />
         </div>

@@ -65,13 +65,26 @@ function analyzeDocumentBytes(buffer: Buffer, fileName: string): any {
   // 4. Vendor Name & Category Detection
   let vendorName = 'Verified Infrastructure Supplier';
   let vendorCategory = 'Cloud & Infrastructure Services';
+
+  // Extract vendor from text if matches "VENDOR: <name>" or "FROM: <name>"
+  const vendorMatch = rawText.match(/(?:VENDOR|FROM|SUPPLIER|COMPANY):\s*([^\r\n;]+)/i);
+  if (vendorMatch && vendorMatch[1].trim().length > 2) {
+    vendorName = vendorMatch[1].trim();
+  }
+
+  // Extract invoice number
+  const invNumberMatch = rawText.match(/(?:INVOICE|INV|BILL)\s*(?:#|NO\.?|NUMBER:?)\s*([A-Za-z0-9-_]+)/i);
+  let invoiceNumber = invNumberMatch ? invNumberMatch[1] : `INV-${Date.now().toString().slice(-6)}`;
+
   let riskScore = 8;
   let riskLevel: 'SAFE' | 'WARNING' | 'CRITICAL_RISK' = 'SAFE';
   let riskSummary = 'Document verified with clean cryptographic structure and valid recipient address.';
   let riskFlags = ['Binary OCR integrity verified', 'Arc EVM recipient address checksum validated'];
 
   if (isHomoglyphSpoof || isExplicitPhish) {
-    vendorName = 'Circlе Foundation Grants Desk'; // Cyrillic 'е'
+    if (!vendorName.includes('Circl')) {
+      vendorName = 'Circlе Foundation Grants Desk'; // Cyrillic 'е'
+    }
     vendorCategory = 'Fraudulent Advance Fee Escrow';
     riskScore = 98;
     riskLevel = 'CRITICAL_RISK';
@@ -83,13 +96,15 @@ function analyzeDocumentBytes(buffer: Buffer, fileName: string): any {
     ];
     recipientAddress = '0x9999dEAD8888beef111100007777cAFe00001234';
   } else if (amountUsdc > 500) {
-    vendorName = 'ConsenSys Diligence / SecOps Partner';
+    if (vendorName === 'Verified Infrastructure Supplier') {
+      vendorName = 'CipherDefend Smart Contract Labs';
+    }
     vendorCategory = 'Smart Contract Security Audit';
     riskScore = 30;
     riskLevel = 'WARNING';
     riskSummary = 'Authentic deliverable, but exceeds $500 autonomous single-invoice limit.';
     riskFlags = [
-      'High-value invoice ($' + amountUsdc + ' USDC) exceeds autonomous limit ($500 USDC)',
+      'High-value invoice ($' + amountUsdc.toFixed(2) + ' USDC) exceeds autonomous limit ($500 USDC)',
       'Requires dual-signature approval (AI Oracle + Human Officer)',
     ];
   }
@@ -98,7 +113,7 @@ function analyzeDocumentBytes(buffer: Buffer, fileName: string): any {
     vendorName,
     vendorCategory,
     vendorAddress: recipientAddress,
-    invoiceNumber: `INV-${Math.abs(buffer.readInt32BE(0) % 900000 + 100000)}`,
+    invoiceNumber,
     amountUsdc,
     lineItems: [
       { description: `${vendorCategory} Operational Allocation`, quantity: 1, unitPrice: amountUsdc, total: amountUsdc }

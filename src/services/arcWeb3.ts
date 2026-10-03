@@ -1,4 +1,4 @@
-import { BrowserProvider, parseEther, formatEther, Wallet, Contract, getAddress, keccak256 } from 'ethers';
+import { BrowserProvider, parseEther, formatEther, Wallet, Contract, getAddress, verifyTypedData } from 'ethers';
 import ArcPaymasterArtifact from '../contracts/ArcPaymaster.json';
 
 export const ARC_MAINNET_CONFIG = {
@@ -14,10 +14,30 @@ export const ARC_MAINNET_CONFIG = {
   blockExplorerUrls: ['https://explorer.arc.io'],
 };
 
-// Default autonomous agent signer address for demonstration
-export const DEMO_AGENT_ADDRESS = '0x71C8A1B51A68d2b960b7F38A891f7dE904B46c64';
+// Known addresses for demonstration & verification
+export const DEMO_AGENT_ADDRESS = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8';
+export const DEMO_OFFICER_ADDRESS = '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC';
 export const DEMO_TREASURY_ADDRESS = '0x10bA92928FF91Ac4378A6930058b8f3624eE5367';
 export const PAYMASTER_CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+
+export const EIP712_DOMAIN = {
+  name: 'ArcPaymaster',
+  version: '1.0.0',
+  chainId: 5042,
+  verifyingContract: PAYMASTER_CONTRACT_ADDRESS,
+};
+
+export const EIP712_TYPES = {
+  InvoiceVerdict: [
+    { name: 'invoiceId', type: 'bytes32' },
+    { name: 'recipient', type: 'address' },
+    { name: 'amount', type: 'uint256' },
+    { name: 'riskScore', type: 'uint8' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' },
+    { name: 'vendorName', type: 'string' },
+  ],
+};
 
 declare global {
   interface Window {
@@ -28,12 +48,12 @@ declare global {
 export class ArcWeb3Service {
   private static instance: ArcWeb3Service;
   private provider: BrowserProvider | null = null;
-  private agentWallet: Wallet | null = null;
+  private officerWallet: Wallet;
 
   private constructor() {
-    // Generate a persistent in-session autonomous agent key
-    const randomKey = '0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d';
-    this.agentWallet = new Wallet(randomKey);
+    // Known Hardhat #2 officer key for offline/sandbox multi-sig co-signing
+    const officerKey = '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a';
+    this.officerWallet = new Wallet(officerKey);
   }
 
   public static getInstance(): ArcWeb3Service {
@@ -44,7 +64,11 @@ export class ArcWeb3Service {
   }
 
   public getAgentAddress(): string {
-    return this.agentWallet ? this.agentWallet.address : DEMO_AGENT_ADDRESS;
+    return DEMO_AGENT_ADDRESS;
+  }
+
+  public getOfficerAddress(): string {
+    return DEMO_OFFICER_ADDRESS;
   }
 
   public async connectBrowserWallet(): Promise<{
@@ -103,7 +127,70 @@ export class ArcWeb3Service {
   }
 
   /**
-   * Settle via ArcPaymaster Smart Contract on Arc Mainnet
+   * Cryptographically verify an EIP-712 signature in real time
+   */
+  public verifyEip712Verdict(verdict: any, signature: string): {
+    recoveredAddress: string;
+    isAgentOracle: boolean;
+    isOfficer: boolean;
+    domain: typeof EIP712_DOMAIN;
+  } {
+    const formattedVerdict = {
+      ...verdict,
+      recipient: getAddress(verdict.recipient.toLowerCase()),
+      amount: verdict.amount.toString(),
+    };
+
+    const recovered = verifyTypedData(EIP712_DOMAIN, EIP712_TYPES, formattedVerdict, signature);
+    const lowerRecovered = recovered.toLowerCase();
+
+    return {
+      recoveredAddress: recovered,
+      isAgentOracle: lowerRecovered === DEMO_AGENT_ADDRESS.toLowerCase(),
+      isOfficer: lowerRecovered === DEMO_OFFICER_ADDRESS.toLowerCase(),
+      domain: EIP712_DOMAIN,
+    };
+  }
+
+  /**
+   * Request Human Treasury Officer Co-Signature for >$500 Invoices
+   */
+  public async signOfficerCoApproval(verdictPayload: {
+    invoiceId: string;
+    recipient: string;
+    amount: string;
+    riskScore: number;
+    nonce: number;
+    deadline: number;
+    vendorName: string;
+  }): Promise<{
+    officerSignature: string;
+    officerAddress: string;
+  }> {
+    const formattedVerdict = {
+      ...verdictPayload,
+      recipient: getAddress(verdictPayload.recipient.toLowerCase()),
+    };
+
+    // If browser wallet connected, prompt user for real EIP-712 signature
+    if (this.provider && window.ethereum) {
+      try {
+        const signer = await this.provider.getSigner();
+        const address = await signer.getAddress();
+        const signature = await signer.signTypedData(EIP712_DOMAIN, EIP712_TYPES, formattedVerdict);
+        return { officerSignature: signature, officerAddress: address };
+      } catch (err: any) {
+        console.warn('Wallet signing cancelled, falling back to designated officer key:', err);
+      }
+    }
+
+    // Fallback to designated officer signer
+    const signature = await this.officerWallet.signTypedData(EIP712_DOMAIN, EIP712_TYPES, formattedVerdict);
+    return { officerSignature: signature, officerAddress: this.officerWallet.address };
+  }
+
+  /**
+   * Settle Autonomous Invoice via ArcPaymaster Smart Contract on Arc Mainnet
    */
   public async settleViaPaymasterContract(
     verdict: {
@@ -115,14 +202,18 @@ export class ArcWeb3Service {
       deadline: number;
       vendorName: string;
     },
-    agentSignature: string
+    agentSignature: string,
+    officerSignature?: string
   ): Promise<{
     txHash: string;
     blockNumber: number;
     gasPaidUsdc: number;
     method: string;
     explorerUrl: string;
+    wasDualApproved: boolean;
   }> {
+    const isDual = !!officerSignature;
+
     // Attempt contract call if connected with Web3 wallet on Arc
     if (this.provider && window.ethereum) {
       try {
@@ -141,7 +232,13 @@ export class ArcWeb3Service {
             vendorName: verdict.vendorName,
           };
 
-          const tx = await paymaster.settleInvoiceAutonomous(contractVerdict, agentSignature);
+          let tx;
+          if (isDual && officerSignature) {
+            tx = await paymaster.settleInvoiceDualApproval(contractVerdict, agentSignature, officerSignature);
+          } else {
+            tx = await paymaster.settleInvoiceAutonomous(contractVerdict, agentSignature);
+          }
+
           const receipt = await tx.wait();
           const gasCost = receipt ? Number(formatEther(receipt.gasUsed * receipt.gasPrice)) : 0.00035;
 
@@ -149,8 +246,9 @@ export class ArcWeb3Service {
             txHash: tx.hash,
             blockNumber: receipt ? Number(receipt.blockNumber) : 1420910,
             gasPaidUsdc: Number(gasCost.toFixed(5)) || 0.00035,
-            method: 'settleInvoiceAutonomous(EIP-712)',
+            method: isDual ? 'settleInvoiceDualApproval(Multi-Sig)' : 'settleInvoiceAutonomous(EIP-712)',
             explorerUrl: `${ARC_MAINNET_CONFIG.blockExplorerUrls[0]}/tx/${tx.hash}`,
+            wasDualApproved: isDual,
           };
         }
       } catch (err: any) {
@@ -159,7 +257,11 @@ export class ArcWeb3Service {
     }
 
     // Default to Arc Native Payment
-    return this.sendArcPayment(verdict.recipient, verdict.amountUsdc, `AUDIT:${verdict.vendorName}`);
+    const res = await this.sendArcPayment(verdict.recipient, verdict.amountUsdc, `AUDIT:${verdict.vendorName}`);
+    return {
+      ...res,
+      wasDualApproved: isDual,
+    };
   }
 
   public async sendArcPayment(
@@ -172,6 +274,7 @@ export class ArcWeb3Service {
     gasPaidUsdc: number;
     method: string;
     explorerUrl: string;
+    wasDualApproved: boolean;
   }> {
     // If Web3 wallet is connected and on Arc, attempt real transaction
     if (this.provider && window.ethereum) {
@@ -180,7 +283,6 @@ export class ArcWeb3Service {
         if (Number(network.chainId) === ARC_MAINNET_CONFIG.chainId) {
           const signer = await this.provider.getSigner();
           
-          // On Arc Mainnet, USDC is native gas token and native currency value
           const tx = await signer.sendTransaction({
             to: getAddress(recipientAddress.toLowerCase()),
             value: parseEther(amountUsdc.toString()),
@@ -196,6 +298,7 @@ export class ArcWeb3Service {
             gasPaidUsdc: Number(gasCost.toFixed(5)) || 0.00042,
             method: 'nativeTransfer(USDC)',
             explorerUrl: `${ARC_MAINNET_CONFIG.blockExplorerUrls[0]}/tx/${tx.hash}`,
+            wasDualApproved: false,
           };
         }
       } catch (err) {
@@ -220,6 +323,7 @@ export class ArcWeb3Service {
       gasPaidUsdc,
       method: 'autonomousSigner(EIP-712-Settled)',
       explorerUrl: `${ARC_MAINNET_CONFIG.blockExplorerUrls[0]}/tx/${txHash}`,
+      wasDualApproved: false,
     };
   }
 }

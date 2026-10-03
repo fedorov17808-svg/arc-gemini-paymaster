@@ -149,7 +149,7 @@ export const App: React.FC = () => {
   };
 
   // Pay single invoice on Arc
-  const handlePayInvoice = async (inv: Invoice) => {
+  const handlePayInvoice = async (inv: Invoice, officerSignature?: string) => {
     if (inv.riskLevel === 'CRITICAL_RISK' || inv.status === 'REJECTED') {
       showToast('Action Blocked: Invoice is flagged with critical fraud risk!', 'error');
       return;
@@ -169,7 +169,7 @@ export const App: React.FC = () => {
           nonce: 0,
           deadline: Math.floor(Date.now() / 1000) + 86400,
           vendorName: inv.vendorName,
-        }, inv.agentSignature);
+        }, inv.agentSignature, officerSignature);
       } else {
         res = await arcWeb3.sendArcPayment(inv.vendorAddress, inv.amountUsdc, inv.memo);
       }
@@ -226,7 +226,11 @@ export const App: React.FC = () => {
         colors: ['#00f2fe', '#0052ff', '#10b981'],
       });
 
-      showToast(`Settled on Arc! Tx: ${res.txHash.slice(0, 10)}... (Gas: ${res.gasPaidUsdc} USDC)`, 'success');
+      const successLabel = res.wasDualApproved 
+        ? `Dual Multi-Sig Settled on Arc! Tx: ${res.txHash.slice(0, 10)}... (Gas: ${res.gasPaidUsdc} USDC)`
+        : `Settled on Arc! Tx: ${res.txHash.slice(0, 10)}... (Gas: ${res.gasPaidUsdc} USDC)`;
+
+      showToast(successLabel, 'success');
     } catch (err: any) {
       showToast('Transaction error: ' + err.message, 'error');
     } finally {

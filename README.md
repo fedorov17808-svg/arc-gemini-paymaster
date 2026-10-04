@@ -5,9 +5,11 @@
 [![Model: Google Gemini 2.5 Flash](https://img.shields.io/badge/AI_Engine-Gemini_2.5_Flash-4285F4?style=for-the-badge&logo=google)](https://ai.google.dev)
 [![Solidity: 0.8.28](https://img.shields.io/badge/Solidity-0.8.28_EIP--712-363636?style=for-the-badge&logo=solidity)](https://soliditylang.org)
 [![Deployment: Vercel Production](https://img.shields.io/badge/Deployment-Live_on_Vercel-000000?style=for-the-badge&logo=vercel)](https://arc-gemini-paymaster.vercel.app)
-[![Tests: 10/10 Passed](https://img.shields.io/badge/Security_Tests-10%2F10_Passing_(100%25)-10b981?style=for-the-badge)](https://github.com)
+[![Tests: 10/10 Passed](https://img.shields.io/badge/Security_Tests-10%2F10_Passing_(100%25)-10b981?style=for-the-badge)](https://github.com/fedorov17808-svg/arc-gemini-paymaster)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-fedorov17808--svg%2Farc--gemini--paymaster-181717?style=for-the-badge&logo=github)](https://github.com/fedorov17808-svg/arc-gemini-paymaster)
 
 > **Live Production URL:** [https://arc-gemini-paymaster.vercel.app](https://arc-gemini-paymaster.vercel.app)  
+> **GitHub Repository:** [https://github.com/fedorov17808-svg/arc-gemini-paymaster](https://github.com/fedorov17808-svg/arc-gemini-paymaster)  
 > **DoraHacks Hackathon Track:** Arc Microgrants (Powered by Circle)  
 > **Circle Arc RPC:** `https://rpc.mainnet.arc.io` (Real-time live block height: **24.2M+**)
 
@@ -178,7 +180,7 @@ Judges can test the full pipeline in seconds by clicking **"Upload & Audit Invoi
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/<your-account>/arc-gemini-paymaster.git
+git clone https://github.com/fedorov17808-svg/arc-gemini-paymaster.git
 cd arc-gemini-paymaster
 npm install
 ```

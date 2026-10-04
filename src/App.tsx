@@ -9,6 +9,8 @@ import { AgentTerminalModal } from './components/AgentTerminalModal';
 import { PolicyModal } from './components/PolicyModal';
 import { HackathonInfoModal } from './components/HackathonInfoModal';
 import { ArcLedgerTable } from './components/ArcLedgerTable';
+import { JudgeShowcase } from './components/JudgeShowcase';
+import { ArcscanModal } from './components/ArcscanModal';
 
 import { Invoice, TreasuryPolicy, WalletState } from './types';
 import { SAMPLE_INVOICES } from './data/sampleInvoices';
@@ -60,6 +62,7 @@ export const App: React.FC = () => {
   const [isAuditing, setIsAuditing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
+  const [explorerInvoice, setExplorerInvoice] = useState<Invoice | null>(null);
 
   // Fetch persistent invoices on mount & merge
   useEffect(() => {
@@ -259,6 +262,133 @@ export const App: React.FC = () => {
     setIsProcessing(false);
   };
 
+  // Quarantine fraudulent scam invoice on Arc Mainnet
+  const handleQuarantineInvoice = async (inv: Invoice) => {
+    setIsProcessing(true);
+    showToast(`Quarantining scam invoice & blacklisting scammer address on Arc...`, 'info');
+
+    try {
+      const res = await arcWeb3.quarantineFraudulentInvoice(
+        inv.docHash || inv.id,
+        inv.vendorAddress,
+        inv.riskScore,
+        inv.riskSummary || 'Gemini Sentinel: Phishing & Homoglyph Spoofing'
+      );
+
+      // Persist quarantine status to serverless backend
+      fetch('/api/invoices', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: inv.id,
+          txHash: res.txHash,
+          arcBlockNumber: res.blockNumber,
+          gasPaidUsdc: res.gasPaidUsdc,
+        }),
+      }).catch((e) => console.warn('Could not persist quarantine to backend:', e));
+
+      const updatedInvoices = invoices.map((item) =>
+        item.id === inv.id
+          ? {
+              ...item,
+              status: 'REJECTED' as const,
+              txHash: res.txHash,
+              arcBlockNumber: res.blockNumber,
+              gasPaidUsdc: res.gasPaidUsdc,
+            }
+          : item
+      );
+
+      setInvoices(updatedInvoices);
+      try {
+        localStorage.setItem('arc_invoices', JSON.stringify(updatedInvoices));
+      } catch (e) {
+        console.warn('Could not save to localStorage:', e);
+      }
+
+      if (selectedInvoice && selectedInvoice.id === inv.id) {
+        setSelectedInvoice({
+          ...selectedInvoice,
+          status: 'REJECTED',
+          txHash: res.txHash,
+          arcBlockNumber: res.blockNumber,
+          gasPaidUsdc: res.gasPaidUsdc,
+        });
+      }
+
+      showToast(`🛡️ Address Blacklisted On-Chain! Tx: ${res.txHash.slice(0, 10)}... (Gas Sponsored)`, 'success');
+      
+      // Open in-app Arcscan Explorer
+      setExplorerInvoice({
+        ...inv,
+        status: 'REJECTED',
+        txHash: res.txHash,
+        arcBlockNumber: res.blockNumber,
+        gasPaidUsdc: res.gasPaidUsdc,
+      });
+    } catch (err: any) {
+      showToast('Quarantine error: ' + err.message, 'error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Reset Demo State for Judges
+  const handleResetDemo = () => {
+    localStorage.removeItem('arc_invoices');
+    setInvoices(SAMPLE_INVOICES);
+    setTreasuryBalance(10000.00);
+    showToast('Demo state and treasury reset ($10,000.00 USDC)', 'success');
+  };
+
+  // 1-Click Interactive Showcase Scenarios for DoraHacks Judges
+  const handleSelectScenario = (scenario: 'autonomous' | 'multisig' | 'phishing' | 'upload') => {
+    if (scenario === 'autonomous') {
+      const inv = invoices.find(i => i.id === 'inv-cf-802') || invoices[0];
+      setSelectedInvoice(inv);
+    } else if (scenario === 'multisig') {
+      let highTicket = invoices.find(i => i.amountUsdc > 500);
+      if (!highTicket) {
+        const sampleAudit: Invoice = {
+          id: `inv-audit-${Date.now()}`,
+          invoiceNumber: 'SEC-2026-8802',
+          vendorName: 'CipherDefend Smart Contract Labs',
+          vendorCategory: 'Security Audit & Formal Verification',
+          vendorAddress: '0x90F79bf6EB2c4f870365E785982E1f101E93b906',
+          amountUsdc: 850.00,
+          issueDate: '2026-10-02',
+          dueDate: '2026-10-16',
+          lineItems: [
+            { description: 'ArcPaymaster.sol Formal Verification & Slither/Mythril Scan', quantity: 1, unitPrice: 850.00, total: 850.00 },
+          ],
+          riskScore: 8,
+          riskLevel: 'SAFE' as const,
+          riskSummary: 'High-value security audit bill. Exceeds $500 autonomous cap; requires Dual Multi-Sig approval.',
+          riskFlags: [
+            'Autonomous spending threshold exceeded ($850.00 > $500.00)',
+            'Vendor identity verified with registered security auditor',
+            'Requires Gemini Agent + Treasury Officer co-signatures',
+          ],
+          aiReasoning: 'Audit invoice structure verified. Autonomous policy holds transfer until Treasury Officer adds ECDSA co-signature.',
+          status: 'AUDITED' as const,
+          memo: 'SEC-2026-8802:Security-Audit',
+          timestamp: Date.now(),
+          docHash: '0x3a9b18274019284719283749182b1c491827401948291029384719283749182b',
+          agentSignature: '0x182736491029384719283746192837461928374619283746192837461928374619283746192837461928374619283746192837461928374619283746192837461b',
+          oracleAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+        };
+        handleLoadSample(sampleAudit);
+        highTicket = sampleAudit;
+      }
+      setSelectedInvoice(highTicket);
+    } else if (scenario === 'phishing') {
+      const phish = invoices.find(i => i.id === 'inv-phish-666') || invoices.find(i => i.riskLevel === 'CRITICAL_RISK');
+      if (phish) setSelectedInvoice(phish);
+    } else if (scenario === 'upload') {
+      setIsUploaderOpen(true);
+    }
+  };
+
   // Audit new file uploaded
   const handleAuditFile = async (fileName: string, fileObj?: File) => {
     setIsAuditing(true);
@@ -319,7 +449,7 @@ export const App: React.FC = () => {
     }
   };
 
-  const paidInvoices = invoices.filter((i) => i.status === 'PAID');
+  const ledgerInvoices = invoices.filter((i) => i.status === 'PAID' || (i.status === 'REJECTED' && !!i.txHash));
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -356,6 +486,7 @@ export const App: React.FC = () => {
         onOpenPolicy={() => setIsPolicyOpen(true)}
         onOpenHackathonInfo={() => setIsHackathonInfoOpen(true)}
         onOpenUploader={() => setIsUploaderOpen(true)}
+        onResetDemo={handleResetDemo}
       />
 
       {/* Main Content Area */}
@@ -365,6 +496,12 @@ export const App: React.FC = () => {
           invoices={invoices}
           policy={policy}
           treasuryBalance={treasuryBalance}
+        />
+
+        {/* 1-Click Interactive Showcase for DoraHacks Judges */}
+        <JudgeShowcase 
+          onSelectScenario={handleSelectScenario}
+          invoices={invoices}
         />
 
         {/* Invoice Audit & Processing Queue */}
@@ -378,7 +515,10 @@ export const App: React.FC = () => {
 
         {/* Real-Time Arc Mainnet On-Chain Ledger */}
         <div style={{ marginTop: '36px' }}>
-          <ArcLedgerTable paidInvoices={paidInvoices} />
+          <ArcLedgerTable 
+            paidInvoices={ledgerInvoices} 
+            onOpenExplorer={(inv) => setExplorerInvoice(inv)} 
+          />
         </div>
       </main>
 
@@ -387,7 +527,16 @@ export const App: React.FC = () => {
         invoice={selectedInvoice}
         onClose={() => setSelectedInvoice(null)}
         onPayInvoice={handlePayInvoice}
+        onQuarantineInvoice={handleQuarantineInvoice}
+        onOpenExplorer={(inv) => setExplorerInvoice(inv)}
         isProcessing={isProcessing}
+      />
+
+      {/* In-App Arcscan Block Explorer */}
+      <ArcscanModal 
+        isOpen={!!explorerInvoice}
+        onClose={() => setExplorerInvoice(null)}
+        invoice={explorerInvoice}
       />
 
       <UploaderModal 

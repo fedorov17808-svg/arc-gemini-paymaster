@@ -7,7 +7,8 @@ import {
   HelpCircle, 
   PlusCircle, 
   SlidersHorizontal,
-  ExternalLink
+  ExternalLink,
+  RotateCcw
 } from 'lucide-react';
 import { WalletState } from '../types';
 
@@ -20,6 +21,7 @@ interface HeaderProps {
   onOpenPolicy: () => void;
   onOpenHackathonInfo: () => void;
   onOpenUploader: () => void;
+  onResetDemo?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -31,6 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPolicy,
   onOpenHackathonInfo,
   onOpenUploader,
+  onResetDemo,
 }) => {
   return (
     <header className="glass-panel" style={{ margin: '16px 20px', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
@@ -173,6 +176,28 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <SlidersHorizontal size={16} color="#94a3b8" />
         </button>
+
+        {/* Reset Demo State */}
+        {onResetDemo && (
+          <button
+            onClick={onResetDemo}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-muted)',
+              fontSize: '0.82rem',
+              padding: '8px 12px',
+              borderRadius: '10px',
+            }}
+            title="Reset Invoices & Treasury Balance to Initial Demo State"
+          >
+            <RotateCcw size={15} color="#94a3b8" />
+            <span>Reset Demo</span>
+          </button>
+        )}
 
         {/* Web3 / Autonomous Wallet */}
         {wallet.isConnected ? (

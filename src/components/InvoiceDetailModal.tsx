@@ -20,6 +20,8 @@ interface InvoiceDetailModalProps {
   invoice: Invoice | null;
   onClose: () => void;
   onPayInvoice: (invoice: Invoice, officerSignature?: string) => void;
+  onQuarantineInvoice?: (invoice: Invoice) => void;
+  onOpenExplorer?: (invoice: Invoice) => void;
   isProcessing: boolean;
 }
 
@@ -27,6 +29,8 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
   invoice,
   onClose,
   onPayInvoice,
+  onQuarantineInvoice,
+  onOpenExplorer,
   isProcessing,
 }) => {
   const [verificationResult, setVerificationResult] = useState<{
@@ -392,10 +396,8 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
           </button>
 
           {isPaid ? (
-            <a
-              href={`https://explorer.arc.io/tx/${invoice.txHash}`}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={() => onOpenExplorer && onOpenExplorer(invoice)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -407,32 +409,57 @@ export const InvoiceDetailModal: React.FC<InvoiceDetailModalProps> = ({
                 color: '#00f2fe',
                 fontSize: '0.85rem',
                 fontWeight: 700,
-                textDecoration: 'none',
+                cursor: 'pointer',
               }}
             >
-              <span>View On Arc Explorer</span>
+              <span>View On Arcscan Explorer</span>
               <ExternalLink size={14} />
-            </a>
-          ) : isBlocked ? (
-            <button
-              disabled
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
-                borderRadius: '8px',
-                background: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
-                color: '#f87171',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                cursor: 'not-allowed',
-              }}
-            >
-              <Lock size={14} />
-              <span>Payment Blocked by Gemini Policy</span>
             </button>
+          ) : isBlocked ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {invoice.txHash ? (
+                <button
+                  onClick={() => onOpenExplorer && onOpenExplorer(invoice)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#f87171',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <ShieldAlert size={14} />
+                  <span>Quarantined On-Chain (Inspect Receipt)</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => onQuarantineInvoice && onQuarantineInvoice(invoice)}
+                  disabled={isProcessing}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 22px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+                    color: '#ffffff',
+                    fontSize: '0.85rem',
+                    fontWeight: 800,
+                    boxShadow: '0 4px 20px rgba(239, 68, 68, 0.4)',
+                    cursor: isProcessing ? 'wait' : 'pointer',
+                  }}
+                >
+                  <ShieldAlert size={16} />
+                  <span>{isProcessing ? 'Executing Quarantine...' : '🛡️ Execute On-Chain Quarantine & Blacklist'}</span>
+                </button>
+              )}
+            </div>
           ) : isWarning && !officerSignature ? (
             <button
               onClick={handleCoSignAndPay}

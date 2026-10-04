@@ -106,6 +106,10 @@ export const Header: React.FC<HeaderProps> = ({
           <span>Arc Mainnet (ID: 5042)</span>
           <span style={{ color: 'var(--text-dim)' }}>|</span>
           <span style={{ color: '#00f2fe', fontWeight: 600 }}>Gas: USDC</span>
+          <span style={{ color: 'var(--text-dim)' }}>|</span>
+          <span style={{ color: '#34d399', fontWeight: 700 }} title="Circle Paymaster sponsors gas fees automatically">
+            ⚡ Gas Sponsored
+          </span>
         </div>
       </div>
 

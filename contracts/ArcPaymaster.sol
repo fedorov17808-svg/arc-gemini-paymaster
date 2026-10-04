@@ -134,10 +134,10 @@ contract ArcPaymaster is EIP712, Ownable, ReentrancyGuard {
         require(!isBlacklisted[verdict.recipient], "ArcPaymaster: Recipient is blacklisted");
         // 3. Autonomous spending limit check
         require(verdict.amount <= maxAutonomousLimit, "ArcPaymaster: Exceeds autonomous limit; requires dual-approval");
-        // 4. Risk score threshold
+        // 4. AI Risk Assessment check
         require(verdict.riskScore <= maxAllowedRiskScore, "ArcPaymaster: Risk score too high");
-        // 5. Dynamic nonce validation
-        require(verdict.nonce == nonces[verdict.recipient], "ArcPaymaster: Invalid nonce");
+        // 5. Dynamic nonce validation: invoiceId guarantees unique settlement; nonce prevents stale verdicts
+        require(verdict.nonce >= nonces[verdict.recipient], "ArcPaymaster: Stale or revoked nonce");
 
         // 6. Verify EIP-712 signature from authorized Gemini Oracle
         bytes32 structHash = keccak256(
@@ -161,7 +161,7 @@ contract ArcPaymaster is EIP712, Ownable, ReentrancyGuard {
 
         // 8. State updates
         isSettled[verdict.invoiceId] = true;
-        nonces[verdict.recipient]++;
+        nonces[verdict.recipient] = verdict.nonce + 1;
 
         // 9. Dual-mode transfer: Native USDC (Arc Layer 1) or ERC-20 USDC
         _transferFunds(verdict.recipient, verdict.amount);
@@ -188,7 +188,7 @@ contract ArcPaymaster is EIP712, Ownable, ReentrancyGuard {
         require(!isSettled[verdict.invoiceId], "ArcPaymaster: Invoice already settled");
         require(!isBlacklisted[verdict.recipient], "ArcPaymaster: Recipient is blacklisted");
         require(verdict.riskScore <= maxAllowedRiskScore, "ArcPaymaster: Risk score too high");
-        require(verdict.nonce == nonces[verdict.recipient], "ArcPaymaster: Invalid nonce");
+        require(verdict.nonce >= nonces[verdict.recipient], "ArcPaymaster: Stale or revoked nonce");
 
         bytes32 structHash = keccak256(
             abi.encode(
@@ -212,7 +212,7 @@ contract ArcPaymaster is EIP712, Ownable, ReentrancyGuard {
         _checkAndApplyBudget(verdict.amount);
 
         isSettled[verdict.invoiceId] = true;
-        nonces[verdict.recipient]++;
+        nonces[verdict.recipient] = verdict.nonce + 1;
 
         _transferFunds(verdict.recipient, verdict.amount);
 

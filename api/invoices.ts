@@ -132,6 +132,10 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Missing invoice id in PATCH body or query' });
     }
 
+    if (txHash && typeof txHash === 'string' && !/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
+      return res.status(400).json({ error: 'Invalid txHash format: must be a 66-character EVM transaction hash' });
+    }
+
     const index = serverlessInvoices.findIndex((i) => i.id === id);
     if (index !== -1) {
       serverlessInvoices[index] = {

@@ -3,15 +3,8 @@ import {
   X, 
   CheckCircle2, 
   ShieldAlert, 
-  Zap, 
-  ExternalLink, 
   Copy, 
   Check, 
-  FileCode, 
-  Activity, 
-  Layers, 
-  ArrowRight,
-  ShieldCheck,
   Fuel
 } from 'lucide-react';
 import { Invoice } from '../types';

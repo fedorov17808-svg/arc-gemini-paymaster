@@ -237,7 +237,14 @@ contract ArcPaymaster is EIP712, Ownable, ReentrancyGuard {
         string calldata reason,
         bool autoBlacklist
     ) external {
-        require(msg.sender == geminiAgentOracle || msg.sender == owner(), "Unauthorized");
+        require(
+            msg.sender == geminiAgentOracle || msg.sender == owner() || msg.sender == treasuryOfficer,
+            "ArcPaymaster: Unauthorized quarantine authority"
+        );
+        require(invoiceId != bytes32(0), "ArcPaymaster: Invalid invoiceId");
+
+        // Permanently neutralize this invoice from future settlement
+        isSettled[invoiceId] = true;
 
         if (autoBlacklist && scammerAddress != address(0)) {
             isBlacklisted[scammerAddress] = true;
@@ -288,6 +295,7 @@ contract ArcPaymaster is EIP712, Ownable, ReentrancyGuard {
         uint8 newMaxRiskScore,
         uint256 newDailyBudget
     ) external onlyOwner {
+        require(newMaxRiskScore <= 100, "ArcPaymaster: Invalid max risk score");
         maxAutonomousLimit = newAutonomousLimit;
         maxAllowedRiskScore = newMaxRiskScore;
         dailyBudget = newDailyBudget;

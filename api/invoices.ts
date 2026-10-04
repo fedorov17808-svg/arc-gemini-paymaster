@@ -126,7 +126,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'PATCH') {
     // Accommodate body id or query id from URL rewrites
     const id = req.body?.id || (req.query?.id as string);
-    const { txHash, arcBlockNumber, gasPaidUsdc } = req.body || {};
+    const { txHash, arcBlockNumber, gasPaidUsdc, status } = req.body || {};
 
     if (!id) {
       return res.status(400).json({ error: 'Missing invoice id in PATCH body or query' });
@@ -138,9 +138,11 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     const index = serverlessInvoices.findIndex((i) => i.id === id);
     if (index !== -1) {
+      const currentStatus = serverlessInvoices[index].status;
+      const resolvedStatus = status || (currentStatus === 'REJECTED' ? 'REJECTED' : 'PAID');
       serverlessInvoices[index] = {
         ...serverlessInvoices[index],
-        status: 'PAID',
+        status: resolvedStatus,
         txHash: txHash || '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(''),
         arcBlockNumber: arcBlockNumber || (1420800 + Math.floor(Math.random() * 500)),
         gasPaidUsdc: typeof gasPaidUsdc === 'number' ? gasPaidUsdc : 0.00035,
@@ -149,10 +151,10 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, invoice: serverlessInvoices[index] });
     }
 
-    // If invoice wasn't found in memory (due to cold start), create it as settled
+    // If invoice wasn't found in memory (due to cold start), create it with appropriate status
     const simulatedPaid = {
       id,
-      status: 'PAID',
+      status: status || 'PAID',
       txHash: txHash || '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(''),
       arcBlockNumber: arcBlockNumber || 1420950,
       gasPaidUsdc: gasPaidUsdc ?? 0.00035,

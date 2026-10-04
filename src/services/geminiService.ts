@@ -1,5 +1,6 @@
 import { Invoice, TreasuryPolicy, AgentChatMessage, RiskLevel } from '../types';
-import { keccak256, toUtf8Bytes } from 'ethers';
+import { keccak256, toUtf8Bytes, Wallet, parseEther } from 'ethers';
+import { EIP712_DOMAIN, EIP712_TYPES, DEMO_AGENT_ADDRESS } from './arcWeb3';
 
 export class GeminiService {
   private static instance: GeminiService;
@@ -178,9 +179,30 @@ export class GeminiService {
       timestamp: Date.now(),
       memo: `AUDIT:${vendor.slice(0, 10).replace(/[^a-zA-Z0-9]/g, '')}`,
       docHash: calculatedDocHash,
-      agentSignature: riskLevel === 'CRITICAL_RISK' ? undefined : '0x3a82f918e97bb10452ca876402376918a2bc490d1f7c9e0129bc847291a9df201837492c8192a01948dcb7264819a28b4912093847291a29384719283749182b1c',
-      oracleAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+      agentSignature: undefined,
+      oracleAddress: DEMO_AGENT_ADDRESS,
     };
+
+    if (riskLevel !== 'CRITICAL_RISK') {
+      try {
+        const oracleWallet = new Wallet('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d');
+        fallbackInvoice.agentSignature = await oracleWallet.signTypedData(
+          EIP712_DOMAIN,
+          EIP712_TYPES,
+          {
+            invoiceId: calculatedDocHash,
+            recipient: vendorAddress,
+            amount: parseEther(amount.toString()).toString(),
+            riskScore,
+            nonce: 0,
+            deadline: Math.floor(Date.now() / 1000) + 86400,
+            vendorName: vendor,
+          }
+        );
+      } catch (e) {
+        console.warn('Could not generate client-side fallback signature:', e);
+      }
+    }
 
     return fallbackInvoice;
   }

@@ -8,6 +8,7 @@ import { UploaderModal } from './components/UploaderModal';
 import { AgentTerminalModal } from './components/AgentTerminalModal';
 import { PolicyModal } from './components/PolicyModal';
 import { HackathonInfoModal } from './components/HackathonInfoModal';
+import { SecurityAuditModal } from './components/SecurityAuditModal';
 import { ArcLedgerTable } from './components/ArcLedgerTable';
 import { JudgeShowcase } from './components/JudgeShowcase';
 import { ArcscanModal } from './components/ArcscanModal';
@@ -59,6 +60,7 @@ export const App: React.FC = () => {
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const [isPolicyOpen, setIsPolicyOpen] = useState(false);
   const [isHackathonInfoOpen, setIsHackathonInfoOpen] = useState(false);
+  const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [isAuditing, setIsAuditing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
@@ -485,6 +487,7 @@ export const App: React.FC = () => {
         onOpenTerminal={() => setIsTerminalOpen(true)}
         onOpenPolicy={() => setIsPolicyOpen(true)}
         onOpenHackathonInfo={() => setIsHackathonInfoOpen(true)}
+        onOpenSecurityModal={() => setIsSecurityModalOpen(true)}
         onOpenUploader={() => setIsUploaderOpen(true)}
         onResetDemo={handleResetDemo}
       />
@@ -569,6 +572,12 @@ export const App: React.FC = () => {
       <HackathonInfoModal 
         isOpen={isHackathonInfoOpen}
         onClose={() => setIsHackathonInfoOpen(false)}
+        onOpenSecurityModal={() => setIsSecurityModalOpen(true)}
+      />
+
+      <SecurityAuditModal 
+        isOpen={isSecurityModalOpen}
+        onClose={() => setIsSecurityModalOpen(false)}
       />
     </div>
   );

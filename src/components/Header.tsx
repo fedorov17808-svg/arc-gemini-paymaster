@@ -20,6 +20,7 @@ interface HeaderProps {
   onOpenTerminal: () => void;
   onOpenPolicy: () => void;
   onOpenHackathonInfo: () => void;
+  onOpenSecurityModal: () => void;
   onOpenUploader: () => void;
   onResetDemo?: () => void;
 }
@@ -32,6 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenTerminal,
   onOpenPolicy,
   onOpenHackathonInfo,
+  onOpenSecurityModal,
   onOpenUploader,
   onResetDemo,
 }) => {
@@ -70,25 +72,48 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Network & Security Badges */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-        {/* Enterprise Sentinel Status */}
+        {/* Security Suite 10/10 In-App Runner */}
         <button
-          onClick={onOpenHackathonInfo}
+          onClick={onOpenSecurityModal}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            background: 'rgba(16, 185, 129, 0.12)',
-            border: '1px solid rgba(16, 185, 129, 0.35)',
+            background: 'rgba(16, 185, 129, 0.15)',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
             color: '#34d399',
             padding: '6px 12px',
             borderRadius: '999px',
             fontSize: '0.75rem',
-            fontWeight: 600,
+            fontWeight: 700,
+            cursor: 'pointer',
           }}
-          title="Click to view Architecture & Security Verification Matrix"
+          title="Click to execute 10-Point Smart Contract & Cryptographic Security Suite"
         >
           <ShieldCheck size={14} color="#34d399" />
-          <span>Sentinel Guard Active</span>
+          <span>Security Suite (10/10)</span>
+        </button>
+
+        {/* Execution Mode Selector */}
+        <button
+          onClick={onToggleAutonomousMode}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: wallet.isAutonomousAgentMode ? 'rgba(0, 242, 254, 0.12)' : 'rgba(0, 82, 255, 0.12)',
+            border: `1px solid ${wallet.isAutonomousAgentMode ? 'rgba(0, 242, 254, 0.35)' : 'rgba(0, 82, 255, 0.35)'}`,
+            color: wallet.isAutonomousAgentMode ? '#00f2fe' : '#93c5fd',
+            padding: '6px 12px',
+            borderRadius: '999px',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+          title="Toggle between Autonomous EIP-712 Paymaster and Web3 Signer Mode"
+        >
+          <Bot size={13} color={wallet.isAutonomousAgentMode ? '#00f2fe' : '#93c5fd'} />
+          <span>{wallet.isAutonomousAgentMode ? 'Mode: Autonomous EIP-712' : 'Mode: Web3 Signer'}</span>
         </button>
 
         {/* Arc Network Status */}

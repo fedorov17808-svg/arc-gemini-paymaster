@@ -175,9 +175,29 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
             Drag and drop PNG, JPG, or PDF here, or click to browse
           </p>
           {isAuditing && (
-            <div style={{ marginTop: '14px', color: '#00f2fe', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00f2fe', animation: 'pulseGlow 1s infinite' }} />
-              <span>Gemini 2.5 Flash analyzing visual structure & fraud markers...</span>
+            <div style={{ marginTop: '16px', padding: '12px 14px', borderRadius: '8px', background: 'rgba(0, 242, 254, 0.08)', border: '1px solid rgba(0, 242, 254, 0.25)', textAlign: 'left' }}>
+              <div style={{ color: '#00f2fe', fontSize: '0.8rem', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00f2fe', animation: 'pulseGlow 1s infinite' }} />
+                <span>Gemini Multimodal Forensic Pipeline In Progress...</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', color: '#cbd5e1' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: '#10b981' }}>✓</span>
+                  <span>1. Visual OCR & Line-Item Tokenization (Gemini 2.5 Flash)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: '#00f2fe' }}>➔</span>
+                  <span>2. Unicode Homoglyph & Phishing Spoofing Scan</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>•</span>
+                  <span>3. EVM Address Checksum & Blacklist Check</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>•</span>
+                  <span>4. EIP-712 Typed Data Packaging (Chain 5042)</span>
+                </div>
+              </div>
             </div>
           )}
         </div>

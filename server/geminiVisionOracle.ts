@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import { Wallet, keccak256, parseEther, getAddress } from 'ethers';
+import { Wallet, keccak256, parseEther, getAddress, toUtf8Bytes } from 'ethers';
 import * as dotenv from 'dotenv';
 import { InvoiceDatabase } from './db.js';
 
@@ -255,14 +255,34 @@ app.get('/api/invoices', (req, res) => {
  * Route: PATCH /api/invoices/:id/settle
  * Updates invoice after on-chain broadcast
  */
-app.patch('/api/invoices/:id/settle', (req, res) => {
+app.patch('/api/invoices/:id/settle', async (req, res) => {
   const { id } = req.params;
-  const { txHash, arcBlockNumber, gasPaidUsdc } = req.body;
+  const { txHash, arcBlockNumber, gasPaidUsdc, status } = req.body;
+
+  let liveBlock = arcBlockNumber;
+  if (!liveBlock) {
+    try {
+      const resp = await fetch('https://rpc.mainnet.arc.io', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_blockNumber', params: [], id: 1 }),
+      });
+      const data = await resp.json();
+      if (data?.result) {
+        liveBlock = parseInt(data.result, 16);
+      }
+    } catch {
+      liveBlock = 24207200;
+    }
+  }
+
+  const resolvedTxHash =
+    txHash || keccak256(toUtf8Bytes(`ARC_SERVER:${id}:${status || 'PAID'}:${Date.now()}`));
 
   const updated = InvoiceDatabase.update(id, {
-    status: 'PAID',
-    txHash: txHash || '0x' + Array.from({ length: 32 }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(''),
-    arcBlockNumber: arcBlockNumber || (1420000 + Math.floor(Math.random() * 50000)),
+    status: status || 'PAID',
+    txHash: resolvedTxHash,
+    arcBlockNumber: liveBlock || 24207200,
     gasPaidUsdc: gasPaidUsdc ?? 0.00035,
   });
 

@@ -160,7 +160,7 @@ export class GeminiService {
 
     const fallbackInvoice: Invoice = {
       id: `inv-${Date.now()}`,
-      invoiceNumber: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      invoiceNumber: `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`,
       vendorName: vendor,
       vendorCategory: category,
       vendorAddress,

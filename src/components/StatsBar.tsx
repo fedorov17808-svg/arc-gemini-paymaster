@@ -46,7 +46,7 @@ export const StatsBar: React.FC<StatsBarProps> = ({ invoices, policy, treasuryBa
       {/* Settled On Arc */}
       <div className="glass-panel" style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>Settled on Arc Mainnet</span>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>Disbursed Volume (USDC)</span>
           <Zap size={18} color="#10b981" />
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
@@ -54,7 +54,7 @@ export const StatsBar: React.FC<StatsBarProps> = ({ invoices, policy, treasuryBa
             ${totalPaidUsdc.toFixed(2)}
           </span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            ({paidInvoices.length} txs)
+            ({paidInvoices.length} settled)
           </span>
         </div>
         <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '4px' }}>
@@ -65,7 +65,7 @@ export const StatsBar: React.FC<StatsBarProps> = ({ invoices, policy, treasuryBa
       {/* Fraud Blocked */}
       <div className="glass-panel" style={{ padding: '16px 20px', border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.04)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.78rem', color: '#fca5a5', fontWeight: 600 }}>Fraud Blocked by Gemini</span>
+          <span style={{ fontSize: '0.78rem', color: '#fca5a5', fontWeight: 600 }}>Protected Treasury Capital</span>
           <ShieldAlert size={18} color="#ef4444" />
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
@@ -77,14 +77,14 @@ export const StatsBar: React.FC<StatsBarProps> = ({ invoices, policy, treasuryBa
           </span>
         </div>
         <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '4px' }}>
-          Homoglyph & spoofed invoices quarantined
+          Phishing & homoglyphs quarantined on Arc
         </p>
       </div>
 
       {/* Pipeline Status */}
       <div className="glass-panel" style={{ padding: '16px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>Queue & Safe Payouts</span>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>Pending Approvals Queue</span>
           <FileCheck2 size={18} color="#60a5fa" />
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
@@ -92,11 +92,11 @@ export const StatsBar: React.FC<StatsBarProps> = ({ invoices, policy, treasuryBa
             {pendingSafe.length} ready
           </span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            / {totalAudited} total
+            / {totalAudited} queued
           </span>
         </div>
         <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '4px' }}>
-          Cap: &lt; ${policy.maxAutoApproveUsdc} auto-sign
+          Policy cap: &lt; ${policy.maxAutoApproveUsdc} USDC autonomous
         </p>
       </div>
     </div>

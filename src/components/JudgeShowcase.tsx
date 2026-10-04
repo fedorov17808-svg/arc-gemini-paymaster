@@ -5,10 +5,9 @@ import {
   ShieldAlert, 
   UploadCloud, 
   ArrowRight, 
-  Sparkles,
   CheckCircle2,
-  Lock,
-  Fuel
+  Fuel,
+  Activity
 } from 'lucide-react';
 import { Invoice } from '../types';
 
@@ -40,9 +39,9 @@ export const JudgeShowcase: React.FC<JudgeShowcaseProps> = ({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ fontSize: '1.1rem' }}>⚡</span>
+            <Activity size={18} color="#00f2fe" />
             <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#f8fafc', margin: 0, letterSpacing: '-0.02em' }}>
-              Interactive DoraHacks Judge Showcase
+              Enterprise Operations & Continuous Sentinel Streams
             </h2>
             <span 
               style={{ 
@@ -55,23 +54,23 @@ export const JudgeShowcase: React.FC<JudgeShowcaseProps> = ({
                 textTransform: 'uppercase'
               }}
             >
-              1-Click Live Demos
+              Active Pipeline
             </span>
           </div>
           <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>
-            Test core architectural breakthroughs on Circle Arc: Zero-Gas Autonomous Settlement, Dual Multi-Sig, and On-Chain Phishing Quarantine.
+            Automated pipeline for verified recurring expenses, executive multi-sig escalations, and active threat neutralization on Circle Arc.
           </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '0.72rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
             <Fuel size={12} />
-            <span>Circle Paymaster Gas: $0.00 (Sponsored)</span>
+            <span>Circle Paymaster Gas: $0.00 (Native Sponsored)</span>
           </span>
         </div>
       </div>
 
-      {/* 4 Interactive Scenario Cards */}
+      {/* 4 Enterprise Operational Stream Cards */}
       <div 
         style={{ 
           display: 'grid', 
@@ -79,7 +78,7 @@ export const JudgeShowcase: React.FC<JudgeShowcaseProps> = ({
           gap: '16px' 
         }}
       >
-        {/* Scenario 1: Autonomous */}
+        {/* Stream 1: Autonomous */}
         <div 
           onClick={() => onSelectScenario('autonomous')}
           style={{
@@ -109,34 +108,34 @@ export const JudgeShowcase: React.FC<JudgeShowcaseProps> = ({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
               <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#10b981', background: 'rgba(16, 185, 129, 0.12)', padding: '2px 8px', borderRadius: '4px' }}>
-                SCENARIO 1 • AUTONOMOUS
+                VERIFIED STREAM • AUTONOMOUS
               </span>
               {isCloudflarePaid && (
                 <span style={{ fontSize: '0.68rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
-                  <CheckCircle2 size={12} /> Settled
+                  <CheckCircle2 size={12} /> Disbursed
                 </span>
               )}
             </div>
             <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc', margin: '0 0 6px 0' }}>
-              Cloudflare AI Workers ($42.50)
+              Cloudflare Network & AI ($42.50)
             </h4>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: 1.4 }}>
-              Low-risk recurring bill. Verified via EIP-712 ECDSA signature, instantly authorized by Gemini with sponsored gas.
+              Low-risk recurring cloud infrastructure. Validated via EIP-712 ECDSA oracle signature with sub-second Arc finality.
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
             <span style={{ fontSize: '0.72rem', color: '#93c5fd', fontWeight: 600 }}>
-              Risk: 4/100 (Safe)
+              Risk: 4/100 (Verified)
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '0.75rem', fontWeight: 700 }}>
-              <span>{isCloudflarePaid ? 'Inspect Receipt' : 'Test 1-Click Pay'}</span>
+              <span>{isCloudflarePaid ? 'Inspect Arc Receipt' : 'Execute Disburse'}</span>
               <ArrowRight size={14} />
             </div>
           </div>
         </div>
 
-        {/* Scenario 2: Dual Multi-Sig */}
+        {/* Stream 2: Dual Multi-Sig */}
         <div 
           onClick={() => onSelectScenario('multisig')}
           style={{
@@ -164,15 +163,15 @@ export const JudgeShowcase: React.FC<JudgeShowcaseProps> = ({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
               <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#f59e0b', background: 'rgba(245, 158, 11, 0.12)', padding: '2px 8px', borderRadius: '4px' }}>
-                SCENARIO 2 • DUAL MULTI-SIG
+                THRESHOLD ESCALATION • MULTI-SIG
               </span>
               <KeyRound size={14} color="#f59e0b" />
             </div>
             <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc', margin: '0 0 6px 0' }}>
-              Smart Contract Audit ($850.00)
+              ConsenSys Diligence Audit ($850.00)
             </h4>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: 1.4 }}>
-              Exceeds $500 autonomous cap. Halts autonomous execution; triggers Treasury Officer co-signing protocol.
+              Exceeds the $500.00 USDC autonomous threshold. Halts autonomous execution; routes to Treasury Officer for co-signature.
             </p>
           </div>
 
@@ -181,13 +180,13 @@ export const JudgeShowcase: React.FC<JudgeShowcaseProps> = ({
               Cap: $500 Exceeded
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b', fontSize: '0.75rem', fontWeight: 700 }}>
-              <span>Test Co-Signing</span>
+              <span>Review Multi-Sig</span>
               <ArrowRight size={14} />
             </div>
           </div>
         </div>
 
-        {/* Scenario 3: Phishing & Quarantine */}
+        {/* Stream 3: Phishing & Quarantine */}
         <div 
           onClick={() => onSelectScenario('phishing')}
           style={{
@@ -215,7 +214,7 @@ export const JudgeShowcase: React.FC<JudgeShowcaseProps> = ({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
               <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#f87171', background: 'rgba(239, 68, 68, 0.12)', padding: '2px 8px', borderRadius: '4px' }}>
-                SCENARIO 3 • SCAM DEFENSE
+                SENTINEL QUARANTINE • THREAT BLOCKED
               </span>
               <ShieldAlert size={14} color="#f87171" />
             </div>
@@ -223,7 +222,7 @@ export const JudgeShowcase: React.FC<JudgeShowcaseProps> = ({
               Circlе Grants Phish ($150.00)
             </h4>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: 1.4 }}>
-              Cyrillic homoglyph spoofing. Gemini Sentinel blocks bill and calls <code style={{ color: '#f87171' }}>quarantineFraudulentInvoice</code> on Arc.
+              Cyrillic homoglyph advance-fee exploit. Gemini Sentinel quarantined the fraudulent bill and blacklisted the scammer on Arc.
             </p>
           </div>
 
@@ -232,13 +231,13 @@ export const JudgeShowcase: React.FC<JudgeShowcaseProps> = ({
               Risk: 98/100 (Critical)
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f87171', fontSize: '0.75rem', fontWeight: 700 }}>
-              <span>{isPhishQuarantined ? 'View On-Chain Block' : 'Execute Quarantine'}</span>
+              <span>{isPhishQuarantined ? 'View On-Chain Block' : 'Inspect Threat'}</span>
               <ArrowRight size={14} />
             </div>
           </div>
         </div>
 
-        {/* Scenario 4: Upload Custom */}
+        {/* Stream 4: Upload Custom */}
         <div 
           onClick={() => onSelectScenario('upload')}
           style={{
@@ -266,15 +265,15 @@ export const JudgeShowcase: React.FC<JudgeShowcaseProps> = ({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
               <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#00f2fe', background: 'rgba(0, 242, 254, 0.12)', padding: '2px 8px', borderRadius: '4px' }}>
-                SCENARIO 4 • LIVE AI OCR
+                DOCUMENT INGESTION • MULTIMODAL OCR
               </span>
               <UploadCloud size={14} color="#00f2fe" />
             </div>
             <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc', margin: '0 0 6px 0' }}>
-              Upload Custom Invoice
+              Ingest Vendor Invoice
             </h4>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: 1.4 }}>
-              Drop your own PDF, PNG, or scan. Gemini 2.5 Flash Vision extracts line items, validates tax IDs, and builds EIP-712 proof.
+              Drop invoice PDF or image. Gemini 2.5 Flash Vision extracts line items, validates tax credentials, and generates EIP-712 proofs.
             </p>
           </div>
 
@@ -283,7 +282,7 @@ export const JudgeShowcase: React.FC<JudgeShowcaseProps> = ({
               Gemini 2.5 Flash
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#00f2fe', fontSize: '0.75rem', fontWeight: 700 }}>
-              <span>Launch Auditor</span>
+              <span>Launch Ingestion</span>
               <ArrowRight size={14} />
             </div>
           </div>

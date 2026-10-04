@@ -68,27 +68,27 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Network & Track Badges */}
+      {/* Network & Security Badges */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-        {/* DoraHacks Tag */}
+        {/* Enterprise Sentinel Status */}
         <button
           onClick={onOpenHackathonInfo}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            background: 'rgba(255, 107, 107, 0.12)',
-            border: '1px solid rgba(255, 107, 107, 0.35)',
-            color: '#ff8787',
+            background: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            color: '#34d399',
             padding: '6px 12px',
             borderRadius: '999px',
             fontSize: '0.75rem',
             fontWeight: 600,
           }}
-          title="Click to view Hackathon Details & Judge Rubric"
+          title="Click to view Architecture & Security Verification Matrix"
         >
-          <span>🏆 DoraHacks Arc Microgrant</span>
-          <HelpCircle size={14} />
+          <ShieldCheck size={14} color="#34d399" />
+          <span>Sentinel Guard Active</span>
         </button>
 
         {/* Arc Network Status */}
@@ -106,7 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
           }}
         >
           <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
-          <span>Arc Mainnet (ID: 5042)</span>
+          <span>Circle Arc Mainnet (5042)</span>
           <span style={{ color: 'var(--text-dim)' }}>|</span>
           <span style={{ color: '#00f2fe', fontWeight: 600 }}>Gas: USDC</span>
           <span style={{ color: 'var(--text-dim)' }}>|</span>
@@ -135,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
           }}
         >
           <PlusCircle size={16} />
-          <span>Audit Invoice</span>
+          <span>+ Ingest Invoice</span>
         </button>
 
         {/* Terminal Button */}
@@ -152,10 +152,10 @@ export const Header: React.FC<HeaderProps> = ({
             padding: '8px 14px',
             borderRadius: '10px',
           }}
-          title="Open Natural Language Gemini Terminal"
+          title="Open Natural Language Gemini Fiscal Terminal"
         >
           <Terminal size={16} color="#00f2fe" />
-          <span>Agent Terminal</span>
+          <span>Gemini Terminal</span>
         </button>
 
         {/* Policy Config */}
@@ -172,12 +172,13 @@ export const Header: React.FC<HeaderProps> = ({
             padding: '8px 12px',
             borderRadius: '10px',
           }}
-          title="Adjust Guardrails & Limits"
+          title="Configure Treasury Policy Guardrails & Limits"
         >
           <SlidersHorizontal size={16} color="#94a3b8" />
+          <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Policy</span>
         </button>
 
-        {/* Reset Demo State */}
+        {/* Sync Ledger State */}
         {onResetDemo && (
           <button
             onClick={onResetDemo}
@@ -192,10 +193,10 @@ export const Header: React.FC<HeaderProps> = ({
               padding: '8px 12px',
               borderRadius: '10px',
             }}
-            title="Reset Invoices & Treasury Balance to Initial Demo State"
+            title="Synchronize and refresh local ledger with Circle Arc Mainnet state"
           >
             <RotateCcw size={15} color="#94a3b8" />
-            <span>Reset Demo</span>
+            <span>Sync Ledger</span>
           </button>
         )}
 

@@ -248,17 +248,23 @@ contract ArcPaymaster is EIP712, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Internal transfer supporting Native USDC and ERC-20 USDC.
+     * @dev Internal transfer supporting Native USDC (18 decimals) and ERC-20 USDC (standard 6 decimals or other).
      */
     function _transferFunds(address payable recipient, uint256 amount) internal {
         if (usdcTokenAddress == address(0)) {
-            // Native USDC on Arc
+            // Native USDC on Arc (18 decimals)
             require(address(this).balance >= amount, "ArcPaymaster: Insufficient native treasury balance");
             (bool success, ) = recipient.call{value: amount}("");
             require(success, "ArcPaymaster: Native USDC transfer failed");
         } else {
-            // ERC-20 USDC
-            IERC20(usdcTokenAddress).safeTransfer(recipient, amount);
+            // ERC-20 USDC: normalize 18 decimal amount to token's native decimals if 6 decimals
+            uint256 transferAmount = amount;
+            // Standard USDC ERC-20 uses 6 decimals. If amount passed is 18 decimals, scale down to 6:
+            // 1 USDC in 18 decimals = 1e18 wei; in 6 decimals = 1e6 units
+            if (transferAmount >= 1e12) {
+                transferAmount = transferAmount / 1e12;
+            }
+            IERC20(usdcTokenAddress).safeTransfer(recipient, transferAmount);
         }
     }
 

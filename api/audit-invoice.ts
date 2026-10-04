@@ -200,6 +200,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Support both base64 JSON payload and binary
     if (req.body && req.body.fileBase64) {
+      if (typeof req.body.fileBase64 === 'string' && req.body.fileBase64.length > 6 * 1024 * 1024) {
+        return res.status(413).json({ error: 'Payload too large: Max file size is 4MB' });
+      }
       fileBuffer = Buffer.from(req.body.fileBase64, 'base64');
       fileName = req.body.fileName || fileName;
       mimeType = req.body.mimeType || mimeType;
@@ -208,6 +211,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else {
       // Fallback text buffer
       fileBuffer = Buffer.from(JSON.stringify(req.body || {}), 'utf8');
+    }
+
+    if (fileBuffer.length > 4.5 * 1024 * 1024) {
+      return res.status(413).json({ error: 'Payload too large: File exceeds 4.5MB serverless limit' });
     }
 
     const apiKey = (req.headers['x-gemini-api-key'] as string) || process.env.GEMINI_API_KEY;

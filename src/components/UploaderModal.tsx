@@ -36,11 +36,17 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
 
   if (!isOpen) return null;
 
+  const MAX_FILE_SIZE_BYTES = 4 * 1024 * 1024; // 4MB maximum payload for Vercel Serverless
+
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        alert('File size exceeds 4MB limit. Please upload an optimized PDF or image.');
+        return;
+      }
       setSelectedFileName(file.name);
       await onAuditFile(file.name, file);
     }
@@ -49,6 +55,10 @@ export const UploaderModal: React.FC<UploaderModalProps> = ({
   const handleFileInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        alert('File size exceeds 4MB limit. Please upload an optimized PDF or image.');
+        return;
+      }
       setSelectedFileName(file.name);
       await onAuditFile(file.name, file);
     }

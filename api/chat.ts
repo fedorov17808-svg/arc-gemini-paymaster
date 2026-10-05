@@ -14,10 +14,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { query, invoices = [], policy = {} } = req.body || {};
-    if (!query || typeof query !== 'string') {
+    const rawQuery = req.body?.query || req.body?.message || req.body?.prompt || req.body?.text || '';
+    const invoices = req.body?.invoices || [];
+    const policy = req.body?.policy || {};
+    if (!rawQuery || typeof rawQuery !== 'string' || !rawQuery.trim()) {
       return res.status(400).json({ error: 'Missing user query string' });
     }
+    const query = rawQuery.trim();
 
     const apiKey = (req.headers['x-gemini-api-key'] as string) || process.env.GEMINI_API_KEY;
 

@@ -81,10 +81,42 @@ export class ArcWeb3Service {
     return DEMO_OFFICER_ADDRESS;
   }
 
+  /**
+   * Fetches real native USDC balance on Circle Arc Mainnet
+   */
+  public async getArcBalance(address: string): Promise<number> {
+    try {
+      if (this.provider) {
+        const balWei = await this.provider.getBalance(address);
+        return Number(Number(formatEther(balWei)).toFixed(4));
+      }
+    } catch {}
+
+    try {
+      const resp = await fetch(ARC_MAINNET_CONFIG.rpcUrls[0], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'eth_getBalance',
+          params: [address, 'latest'],
+          id: 1,
+        }),
+      });
+      const data = await resp.json();
+      if (data?.result) {
+        return Number(Number(formatEther(BigInt(data.result))).toFixed(4));
+      }
+    } catch {}
+
+    return 0;
+  }
+
   public async connectBrowserWallet(): Promise<{
     address: string;
     chainId: number;
     isArc: boolean;
+    balanceUsdc: number;
   }> {
     if (!window.ethereum) {
       throw new Error('No Web3 wallet (MetaMask/Rabby) found. You can still use Autonomous Agent Mode!');
@@ -94,11 +126,14 @@ export class ArcWeb3Service {
     const accounts = await this.provider.send('eth_requestAccounts', []);
     const network = await this.provider.getNetwork();
     const currentChainId = Number(network.chainId);
+    const isArc = currentChainId === ARC_MAINNET_CONFIG.chainId;
+    const balanceUsdc = await this.getArcBalance(accounts[0]);
 
     return {
       address: accounts[0],
       chainId: currentChainId,
-      isArc: currentChainId === ARC_MAINNET_CONFIG.chainId,
+      isArc,
+      balanceUsdc,
     };
   }
 

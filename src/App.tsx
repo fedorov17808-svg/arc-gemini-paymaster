@@ -105,13 +105,13 @@ export const App: React.FC = () => {
       setWallet({
         isConnected: true,
         address: res.address,
-        balanceUsdc: 450.00,
+        balanceUsdc: res.balanceUsdc,
         chainId: res.chainId,
         networkName: res.isArc ? 'Arc Mainnet' : 'Other Network',
         isArcMainnet: res.isArc,
         isAutonomousAgentMode: false,
       });
-      showToast(`Connected: ${res.address.slice(0, 6)}...${res.address.slice(-4)}`, 'success');
+      showToast(`Connected: ${res.address.slice(0, 6)}...${res.address.slice(-4)} (${res.balanceUsdc} USDC)`, 'success');
       if (!res.isArc) {
         showToast('Please switch network to Arc Mainnet (ID 5042)', 'info');
       }

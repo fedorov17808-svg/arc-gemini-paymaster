@@ -225,25 +225,9 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Web3 / Autonomous Wallet */}
-        {wallet.isConnected ? (
+        {/* Web3 / Autonomous Wallet Controls */}
+        {wallet.isAutonomousAgentMode ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {!wallet.isArcMainnet && (
-              <button
-                onClick={onSwitchToArc}
-                style={{
-                  background: 'rgba(239, 68, 68, 0.2)',
-                  border: '1px solid #ef4444',
-                  color: '#fca5a5',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                }}
-              >
-                Switch to Arc
-              </button>
-            )}
             <div 
               style={{
                 display: 'flex',
@@ -257,6 +241,69 @@ export const Header: React.FC<HeaderProps> = ({
                 fontSize: '0.8rem',
                 color: '#6ee7b7',
               }}
+              title="Gemini Agent Autonomous Treasury on Arc Mainnet"
+            >
+              <Bot size={14} color="#00f2fe" />
+              <span>Agent: {wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}</span>
+              <span style={{ color: '#f8fafc', fontWeight: 700 }}>
+                {wallet.balanceUsdc.toFixed(2)} USDC
+              </span>
+            </div>
+
+            <button
+              onClick={onConnectWallet}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(0, 82, 255, 0.2)',
+                border: '1px solid rgba(0, 82, 255, 0.5)',
+                color: '#93c5fd',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                padding: '7px 12px',
+                borderRadius: '10px',
+                cursor: 'pointer',
+              }}
+              title="Connect your browser Web3 wallet (MetaMask / Rabby) on Arc Mainnet"
+            >
+              <WalletIcon size={14} />
+              <span>Connect Web3</span>
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {!wallet.isArcMainnet && (
+              <button
+                onClick={onSwitchToArc}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid #ef4444',
+                  color: '#fca5a5',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Switch to Arc (5042)
+              </button>
+            )}
+            <div 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'rgba(0, 82, 255, 0.15)',
+                border: '1px solid rgba(0, 82, 255, 0.4)',
+                padding: '7px 14px',
+                borderRadius: '10px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.8rem',
+                color: '#93c5fd',
+              }}
+              title="Connected Web3 Browser Wallet"
             >
               <WalletIcon size={14} />
               <span>{wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}</span>
@@ -264,26 +311,23 @@ export const Header: React.FC<HeaderProps> = ({
                 {wallet.balanceUsdc.toFixed(2)} USDC
               </span>
             </div>
+
+            <button
+              onClick={onToggleAutonomousMode}
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-muted)',
+                padding: '7px 10px',
+                borderRadius: '8px',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+              }}
+              title="Switch back to Autonomous Agent mode"
+            >
+              Disconnect
+            </button>
           </div>
-        ) : (
-          <button
-            onClick={onConnectWallet}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'rgba(0, 82, 255, 0.2)',
-              border: '1px solid rgba(0, 82, 255, 0.5)',
-              color: '#93c5fd',
-              fontSize: '0.82rem',
-              fontWeight: 600,
-              padding: '8px 14px',
-              borderRadius: '10px',
-            }}
-          >
-            <WalletIcon size={16} />
-            <span>Connect Wallet</span>
-          </button>
         )}
       </div>
     </header>
